@@ -14,11 +14,8 @@ const colors = {
   red: "\x1b[31m",
   green: "\x1b[32m",
   yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  magenta: "\x1b[35m",
   cyan: "\x1b[36m",
   white: "\x1b[37m",
-  bgRed: "\x1b[41m",
 };
 
 // Box drawing characters
@@ -29,11 +26,8 @@ const box = {
   bottomRight: "╯",
   horizontal: "─",
   vertical: "│",
-  sectionTop: "┌",
-  sectionBottom: "└",
   treeVertical: "├",
   treeEnd: "└",
-  treeContinue: "│",
 };
 
 /**
@@ -41,9 +35,9 @@ const box = {
  */
 export function formatPretty(errors: ValidationError[]): string {
   const lines: string[] = [];
-  const width = 65;
+  const width = 60;
 
-  // Header
+  // Header box
   lines.push("");
   lines.push(
     `${colors.red}${box.topLeft}${box.horizontal.repeat(width)}${box.topRight}${
@@ -52,8 +46,9 @@ export function formatPretty(errors: ValidationError[]): string {
   );
   lines.push(
     `${colors.red}${box.vertical}${colors.reset}${centerText(
-      "❌ Environment Validation Failed",
-      width
+      `${colors.red}${colors.bold} Environment Validation Failed ${colors.reset}`,
+      width,
+      31 // text length without ANSI codes
     )}${colors.red}${box.vertical}${colors.reset}`
   );
   lines.push(
@@ -78,7 +73,7 @@ export function formatPretty(errors: ValidationError[]): string {
   const missingAndEmpty = [...missing, ...empty];
 
   if (missingAndEmpty.length > 0) {
-    lines.push(formatSection("MISSING VARIABLES", missingAndEmpty, width));
+    lines.push(...formatSection("MISSING VARIABLES", missingAndEmpty));
     lines.push("");
   }
 
@@ -89,13 +84,13 @@ export function formatPretty(errors: ValidationError[]): string {
   const invalidValues = [...typeErrors, ...valueErrors, ...parseErrors];
 
   if (invalidValues.length > 0) {
-    lines.push(formatSection("INVALID VALUES", invalidValues, width));
+    lines.push(...formatSection("INVALID VALUES", invalidValues));
     lines.push("");
   }
 
   // Tip
   lines.push(
-    `${colors.cyan}💡 Tip:${colors.reset} Run ${colors.bold}npx envkit generate${colors.reset} to create a .env.example file`
+    `${colors.cyan}Tip:${colors.reset} Run ${colors.bold}npx envkit generate${colors.reset} to create a .env.example file`
   );
   lines.push("");
 
@@ -105,37 +100,24 @@ export function formatPretty(errors: ValidationError[]): string {
 /**
  * Format a section of errors
  */
-function formatSection(
-  title: string,
-  errors: ValidationError[],
-  width: number
-): string {
+function formatSection(title: string, errors: ValidationError[]): string[] {
   const lines: string[] = [];
 
-  // Section header
+  // Section header with simple dashes
   lines.push(
-    `${colors.yellow}${box.sectionTop}${
-      box.horizontal
-    } ${title} ${box.horizontal.repeat(width - title.length - 4)}${
+    `${colors.yellow}── ${title} ${"─".repeat(50 - title.length)}${
       colors.reset
     }`
   );
-  lines.push(`${colors.yellow}${box.vertical}${colors.reset}`);
+  lines.push("");
 
   // Error entries
   for (const error of errors) {
     lines.push(...formatError(error));
-    lines.push(`${colors.yellow}${box.vertical}${colors.reset}`);
+    lines.push("");
   }
 
-  // Section footer
-  lines.push(
-    `${colors.yellow}${box.sectionBottom}${box.horizontal.repeat(width)}${
-      colors.reset
-    }`
-  );
-
-  return lines.join("\n");
+  return lines;
 }
 
 /**
@@ -143,28 +125,25 @@ function formatSection(
  */
 function formatError(error: ValidationError): string[] {
   const lines: string[] = [];
-  const prefix = `${colors.yellow}${box.vertical}${colors.reset}  `;
 
   // Variable name
-  lines.push(
-    `${prefix}${colors.bold}${colors.white}${error.variable}${colors.reset}`
-  );
+  lines.push(`  ${colors.bold}${colors.white}${error.variable}${colors.reset}`);
 
   // Status
   const statusText = getStatusText(error);
   lines.push(
-    `${prefix}  ${colors.dim}${box.treeVertical}${colors.reset}${colors.dim}─ Status:${colors.reset}   ${colors.red}${statusText}${colors.reset}`
+    `    ${colors.dim}${box.treeVertical}─${colors.reset} Status:   ${colors.red}${statusText}${colors.reset}`
   );
 
   // Expected type
   lines.push(
-    `${prefix}  ${colors.dim}${box.treeVertical}${colors.reset}${colors.dim}─ Expected:${colors.reset} ${colors.cyan}${error.expected}${colors.reset}`
+    `    ${colors.dim}${box.treeVertical}─${colors.reset} Expected: ${colors.cyan}${error.expected}${colors.reset}`
   );
 
   // Received value (if applicable)
   if (error.received !== undefined) {
     lines.push(
-      `${prefix}  ${colors.dim}${box.treeVertical}${colors.reset}${colors.dim}─ Received:${colors.reset} ${colors.yellow}"${error.received}"${colors.reset}`
+      `    ${colors.dim}${box.treeVertical}─${colors.reset} Received: ${colors.yellow}"${error.received}"${colors.reset}`
     );
   }
 
@@ -174,7 +153,7 @@ function formatError(error: ValidationError): string[] {
       ? maskSecret(error.example)
       : error.example;
     lines.push(
-      `${prefix}  ${colors.dim}${box.treeEnd}${colors.reset}${colors.dim}─ Example:${colors.reset}  ${colors.green}${exampleValue}${colors.reset}`
+      `    ${colors.dim}${box.treeEnd}─${colors.reset} Example:  ${colors.green}${exampleValue}${colors.reset}`
     );
   }
 
@@ -218,10 +197,10 @@ function maskSecret(value: string): string {
 /**
  * Center text within a given width
  */
-function centerText(text: string, width: number): string {
-  // Remove ANSI codes for length calculation
-  const plainText = text.replace(/\x1b\[[0-9;]*m/g, "");
-  const padding = Math.max(0, Math.floor((width - plainText.length) / 2));
-  const rightPadding = Math.max(0, width - plainText.length - padding);
+function centerText(text: string, width: number, textLen?: number): string {
+  // Calculate actual text length (without ANSI codes)
+  const plainLen = textLen ?? text.replace(/\x1b\[[0-9;]*m/g, "").length;
+  const padding = Math.max(0, Math.floor((width - plainLen) / 2));
+  const rightPadding = Math.max(0, width - plainLen - padding);
   return " ".repeat(padding) + text + " ".repeat(rightPadding);
 }

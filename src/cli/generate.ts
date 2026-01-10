@@ -36,7 +36,9 @@ async function loadSchema(
     const absolutePath = path.resolve(process.cwd(), searchPath);
     if (fs.existsSync(absolutePath)) {
       try {
-        const module = await import(absolutePath);
+        // Dynamic import for ES modules - use file:// URL for Windows compatibility
+        const fileUrl = new URL(`file:///${absolutePath.replace(/\\/g, "/")}`);
+        const module = await import(fileUrl.href);
         const schema = module.default ?? module.schema ?? module.env;
 
         if (schema && typeof schema === "object") {
