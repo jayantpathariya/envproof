@@ -1,5 +1,5 @@
 /**
- * EnvKit - createEnv
+ * EnvProof - createEnv
  * Main entry point for environment validation
  */
 
@@ -11,7 +11,7 @@ import { validate, handleValidationFailure } from "./validation/engine.js";
  *
  * @example
  * ```typescript
- * import { createEnv, e } from 'envkit';
+ * import { createEnv, e } from 'envproof';
  *
  * const env = createEnv({
  *   DATABASE_URL: e.url(),

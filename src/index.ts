@@ -1,9 +1,9 @@
 /**
- * EnvKit - TypeScript-first Environment Variable Validation
+ * EnvProof - TypeScript-first Environment Variable Validation
  *
  * @example
  * ```typescript
- * import { createEnv, e } from 'envkit';
+ * import { createEnv, e } from 'envproof';
  *
  * const env = createEnv({
  *   DATABASE_URL: e.url().description('PostgreSQL connection string'),

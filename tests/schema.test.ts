@@ -1,5 +1,5 @@
 /**
- * EnvKit - Schema Tests
+ * EnvProof - Schema Tests
  * Test schema builders and their validation
  */
 

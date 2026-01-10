@@ -1,5 +1,5 @@
 /**
- * EnvKit - TypeScript Types
+ * EnvProof - TypeScript Types
  * Core type definitions for the validation library
  */
 

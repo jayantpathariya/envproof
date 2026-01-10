@@ -1,5 +1,5 @@
 /**
- * EnvKit - Pretty Reporter
+ * EnvProof - Pretty Reporter
  * Terminal-friendly error output with colors and boxes
  */
 
@@ -90,7 +90,7 @@ export function formatPretty(errors: ValidationError[]): string {
 
   // Tip
   lines.push(
-    `${colors.cyan}Tip:${colors.reset} Run ${colors.bold}npx envkit generate${colors.reset} to create a .env.example file`
+    `${colors.cyan}Tip:${colors.reset} Run ${colors.bold}npx envproof generate${colors.reset} to create a .env.example file`
   );
   lines.push("");
 

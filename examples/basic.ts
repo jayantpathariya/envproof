@@ -1,7 +1,7 @@
 /**
  * Example: Basic Usage
  *
- * This example demonstrates the basic usage of EnvKit
+ * This example demonstrates the basic usage of EnvProof
  * for validating environment variables.
  */
 

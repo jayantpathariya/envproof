@@ -1,5 +1,5 @@
 /**
- * EnvKit - Generator Exports
+ * EnvProof - Generator Exports
  */
 
 export {

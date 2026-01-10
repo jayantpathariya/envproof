@@ -1,5 +1,5 @@
 /**
- * EnvKit - Validation Engine
+ * EnvProof - Validation Engine
  * Core validation logic for environment variables
  */
 

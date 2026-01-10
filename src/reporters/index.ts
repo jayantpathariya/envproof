@@ -1,5 +1,5 @@
 /**
- * EnvKit - Reporter Exports
+ * EnvProof - Reporter Exports
  */
 
 export { formatPretty } from "./pretty.js";

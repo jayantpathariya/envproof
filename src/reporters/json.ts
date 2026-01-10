@@ -1,5 +1,5 @@
 /**
- * EnvKit - JSON Reporter
+ * EnvProof - JSON Reporter
  * Machine-readable JSON error output for CI/CD
  */
 

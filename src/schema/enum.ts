@@ -1,5 +1,5 @@
 /**
- * EnvKit - Enum Schema
+ * EnvProof - Enum Schema
  * Schema for enumerated string values
  */
 

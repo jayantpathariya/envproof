@@ -1,5 +1,5 @@
 /**
- * EnvKit - URL Schema
+ * EnvProof - URL Schema
  * Schema for URL environment variables
  */
 

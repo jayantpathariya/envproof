@@ -1,5 +1,5 @@
 /**
- * EnvKit - Schema Builders
+ * EnvProof - Schema Builders
  * Public API for defining environment variable schemas
  */
 

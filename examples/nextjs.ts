@@ -1,7 +1,7 @@
 /**
  * Example: Next.js Application
  *
- * This example shows how to use EnvKit with Next.js
+ * This example shows how to use EnvProof with Next.js
  * Place this file at the root of your Next.js project as env.config.ts
  */
 
@@ -9,7 +9,7 @@ import { createEnv, e } from "../src/index.js";
 
 // Define environment schema for a Next.js app
 // Note: Next.js has both server and client environment variables
-// EnvKit handles the server-side validation
+// EnvProof handles the server-side validation
 
 export const env = createEnv({
   // Database

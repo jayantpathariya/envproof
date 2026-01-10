@@ -1,5 +1,5 @@
 /**
- * EnvKit - String Schema
+ * EnvProof - String Schema
  * Schema for string environment variables
  */
 

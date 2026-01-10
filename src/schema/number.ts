@@ -1,5 +1,5 @@
 /**
- * EnvKit - Number Schema
+ * EnvProof - Number Schema
  * Schema for numeric environment variables
  */
 

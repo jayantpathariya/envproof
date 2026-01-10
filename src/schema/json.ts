@@ -1,5 +1,5 @@
 /**
- * EnvKit - JSON Schema
+ * EnvProof - JSON Schema
  * Schema for JSON environment variables
  */
 

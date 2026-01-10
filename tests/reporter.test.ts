@@ -1,5 +1,5 @@
 /**
- * EnvKit - Reporter Tests
+ * EnvProof - Reporter Tests
  * Test error formatting
  */
 
@@ -105,7 +105,7 @@ describe("formatMinimal", () => {
     const output = formatMinimal(sampleErrors);
 
     expect(output.split("\n")).toHaveLength(1);
-    expect(output).toContain("EnvKit:");
+    expect(output).toContain("EnvProof:");
     expect(output).toContain("3 invalid environment variables");
   });
 

@@ -1,5 +1,5 @@
 /**
- * EnvKit CLI - Generate Command
+ * EnvProof CLI - Generate Command
  * Generate .env.example from schema
  */
 

@@ -1,5 +1,5 @@
 /**
- * EnvKit - Boolean Schema
+ * EnvProof - Boolean Schema
  * Schema for boolean environment variables
  */
 

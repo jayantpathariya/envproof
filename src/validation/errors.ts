@@ -1,5 +1,5 @@
 /**
- * EnvKit - Validation Errors
+ * EnvProof - Validation Errors
  * Error types and collection utilities
  */
 

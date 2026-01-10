@@ -1,5 +1,5 @@
 /**
- * EnvKit CLI - Check Command
+ * EnvProof CLI - Check Command
  * Validate environment variables against a schema
  */
 

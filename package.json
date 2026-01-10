@@ -1,5 +1,5 @@
 {
-  "name": "envkit",
+  "name": "envproof",
   "version": "1.0.0",
   "description": "TypeScript-first environment variable validation with schema-driven type safety",
   "type": "module",
@@ -19,7 +19,7 @@
     }
   },
   "bin": {
-    "envkit": "./dist/cli/index.js"
+    "envproof": "./dist/cli/index.js"
   },
   "files": [
     "dist"
@@ -58,12 +58,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jayantpathariya/envkit.git"
+    "url": "git+https://github.com/jayantpathariya/envproof.git"
   },
   "bugs": {
-    "url": "https://github.com/jayantpathariya/envkit/issues"
+    "url": "https://github.com/jayantpathariya/envproof/issues"
   },
-  "homepage": "https://github.com/jayantpathariya/envkit#readme",
+  "homepage": "https://github.com/jayantpathariya/envproof#readme",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/jayantpathariya"

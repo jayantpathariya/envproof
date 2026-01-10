@@ -1,5 +1,5 @@
 /**
- * EnvKit CLI
+ * EnvProof CLI
  * Command-line interface for environment validation
  */
 
@@ -9,10 +9,10 @@ import { runGenerate } from "./generate.js";
 const VERSION = "1.0.0";
 
 const HELP = `
-envkit - TypeScript-first environment variable validation
+envproof - TypeScript-first environment variable validation
 
 USAGE:
-  envkit <command> [options]
+  envproof <command> [options]
 
 COMMANDS:
   check      Validate environment variables against schema
@@ -27,12 +27,12 @@ OPTIONS:
   --reporter <type>  Error output format: pretty, json, minimal
 
 EXAMPLES:
-  envkit check
-  envkit check --schema ./config/env.ts
-  envkit generate
-  envkit generate --output .env.template --force
+  envproof check
+  envproof check --schema ./config/env.ts
+  envproof generate
+  envproof generate --output .env.template --force
 
-For more information, visit: https://github.com/jayantpathariya/envkit
+For more information, visit: https://github.com/jayantpathariya/envproof
 `;
 
 interface ParsedArgs {
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
     case "version":
     case "-v":
     case "--version":
-      console.log(`envkit v${VERSION}`);
+      console.log(`envproof v${VERSION}`);
       break;
 
     case "help":

@@ -1,5 +1,5 @@
 /**
- * EnvKit - Base Schema
+ * EnvProof - Base Schema
  * Abstract base class for all schema types
  */
 

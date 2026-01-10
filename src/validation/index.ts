@@ -1,5 +1,5 @@
 /**
- * EnvKit - Validation Exports
+ * EnvProof - Validation Exports
  */
 
 export { validate, formatErrors, handleValidationFailure } from "./engine.js";

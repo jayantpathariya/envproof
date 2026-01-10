@@ -1,5 +1,5 @@
 /**
- * EnvKit - Validation Tests
+ * EnvProof - Validation Tests
  * Test the validation engine
  */
 

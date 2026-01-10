@@ -1,7 +1,7 @@
 /**
  * Example: Express.js Application
  *
- * This example shows how to use EnvKit with Express.js
+ * This example shows how to use EnvProof with Express.js
  */
 
 import { createEnv, e } from "../src/index.js";
