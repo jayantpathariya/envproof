@@ -1,0 +1,71 @@
+{
+  "name": "envkit",
+  "version": "1.0.0",
+  "description": "TypeScript-first environment variable validation with schema-driven type safety",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "bin": {
+    "envkit": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && tsup --config tsup.cli.config.ts",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "environment",
+    "env",
+    "validation",
+    "typescript",
+    "type-safe",
+    "schema",
+    "config",
+    "configuration",
+    "dotenv"
+  ],
+  "author": "Jayant Pathariya",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.0.5",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayantpathariya/envkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jayantpathariya/envkit/issues"
+  },
+  "homepage": "https://github.com/jayantpathariya/envkit#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/jayantpathariya"
+  }
+}
