@@ -4,7 +4,11 @@
  */
 
 import { describe, it, expect } from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { e, generateExample } from "../src/index.js";
+import { writeExampleFile } from "../src/generator/index.js";
 
 describe("generateExample", () => {
   it("generates basic example", () => {
@@ -68,6 +72,26 @@ describe("generateExample", () => {
     const output = generateExample(schema);
 
     expect(output).toContain("# ⚠️  This is a secret");
+  });
+
+  it("uses secret placeholder value", () => {
+    const schema = {
+      API_KEY: e.string().secret(),
+    };
+
+    const output = generateExample(schema);
+
+    expect(output).toContain("API_KEY=your_secret_here");
+  });
+
+  it("adds JSON format hint", () => {
+    const schema = {
+      CONFIG: e.json(),
+    };
+
+    const output = generateExample(schema);
+
+    expect(output).toContain("# Format: JSON");
   });
 
   it("uses custom examples", () => {
@@ -140,5 +164,32 @@ describe("generateExample", () => {
     expect(output).toContain("# Application environment");
     expect(output).toContain("# Enable debug logging");
     expect(output).toContain("# External API key");
+  });
+
+  it("writes example file to disk", () => {
+    const schema = {
+      PORT: e.number().default(3000),
+    };
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "envproof-"));
+    const outputPath = path.join(tempDir, ".env.example");
+
+    const result = writeExampleFile(schema, { output: outputPath });
+
+    expect(result.success).toBe(true);
+    expect(fs.existsSync(outputPath)).toBe(true);
+  });
+
+  it("refuses to overwrite existing file without force", () => {
+    const schema = {
+      PORT: e.number().default(3000),
+    };
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "envproof-"));
+    const outputPath = path.join(tempDir, ".env.example");
+    fs.writeFileSync(outputPath, "# existing", "utf-8");
+
+    const result = writeExampleFile(schema, { output: outputPath });
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Use --force to overwrite");
   });
 });

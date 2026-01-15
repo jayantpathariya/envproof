@@ -52,6 +52,55 @@ describe("StringSchema", () => {
     const failsRule = schema._def.rules[0]?.validate("hello");
     expect(failsRule).toBe(false);
   });
+
+  it("validates max and exact length", () => {
+    const maxSchema = e.string().maxLength(3);
+    const maxRule = maxSchema._def.rules.find((r) => r.name === "maxLength");
+    expect(maxRule?.validate("abc")).toBe(true);
+    expect(maxRule?.validate("abcd")).toBe(false);
+
+    const exactSchema = e.string().length(4);
+    const exactRule = exactSchema._def.rules.find((r) => r.name === "length");
+    expect(exactRule?.validate("test")).toBe(true);
+    expect(exactRule?.validate("no")).toBe(false);
+  });
+
+  it("validates non-empty and prefix/suffix rules", () => {
+    const nonEmptySchema = e.string().nonEmpty();
+    const nonEmptyRule = nonEmptySchema._def.rules.find(
+      (r) => r.name === "nonEmpty"
+    );
+    expect(nonEmptyRule?.validate(" ok ")).toBe(true);
+    expect(nonEmptyRule?.validate("   ")).toBe(false);
+
+    const prefixSchema = e.string().startsWith("sk_");
+    const prefixRule = prefixSchema._def.rules.find(
+      (r) => r.name === "startsWith"
+    );
+    expect(prefixRule?.validate("sk_123")).toBe(true);
+    expect(prefixRule?.validate("pk_123")).toBe(false);
+
+    const suffixSchema = e.string().endsWith(".json");
+    const suffixRule = suffixSchema._def.rules.find(
+      (r) => r.name === "endsWith"
+    );
+    expect(suffixRule?.validate("config.json")).toBe(true);
+    expect(suffixRule?.validate("config.txt")).toBe(false);
+  });
+
+  it("validates email and uuid formats", () => {
+    const emailSchema = e.string().email();
+    const emailRule = emailSchema._def.rules.find((r) => r.name === "email");
+    expect(emailRule?.validate("user@example.com")).toBe(true);
+    expect(emailRule?.validate("bad-email")).toBe(false);
+
+    const uuidSchema = e.string().uuid();
+    const uuidRule = uuidSchema._def.rules.find((r) => r.name === "uuid");
+    expect(uuidRule?.validate("550e8400-e29b-41d4-a716-446655440000")).toBe(
+      true
+    );
+    expect(uuidRule?.validate("not-a-uuid")).toBe(false);
+  });
 });
 
 describe("NumberSchema", () => {
@@ -96,6 +145,32 @@ describe("NumberSchema", () => {
     const schema = e.number().port();
     expect(schema._def.rules.length).toBe(3); // integer, min, max
     expect(schema.getTypeDescription()).toContain("integer");
+  });
+
+  it("validates positive/non-negative and between", () => {
+    const positiveSchema = e.number().positive();
+    const minRule = positiveSchema._def.rules.find((r) => r.name === "min");
+    expect(minRule?.validate(1)).toBe(true);
+    expect(minRule?.validate(0)).toBe(false);
+
+    const nonNegSchema = e.number().nonNegative();
+    const nonNegRule = nonNegSchema._def.rules.find((r) => r.name === "min");
+    expect(nonNegRule?.validate(0)).toBe(true);
+    expect(nonNegRule?.validate(-1)).toBe(false);
+
+    const betweenSchema = e.number().between(10, 20);
+    const betweenMin = betweenSchema._def.rules.find((r) => r.name === "min");
+    const betweenMax = betweenSchema._def.rules.find((r) => r.name === "max");
+    expect(betweenMin?.validate(10)).toBe(true);
+    expect(betweenMax?.validate(20)).toBe(true);
+    expect(betweenMin?.validate(9)).toBe(false);
+    expect(betweenMax?.validate(21)).toBe(false);
+  });
+
+  it("describes ranges consistently", () => {
+    expect(e.number().min(1).max(3).getTypeDescription()).toBe("number, 1-3");
+    expect(e.number().min(2).getTypeDescription()).toBe("number, >= 2");
+    expect(e.number().max(9).getTypeDescription()).toBe("number, <= 9");
   });
 });
 
@@ -163,6 +238,12 @@ describe("EnumSchema", () => {
     const schema = e.enum(["a", "b", "c"] as const);
     expect(schema.getTypeDescription()).toBe("enum (a | b | c)");
   });
+
+  it("throws on empty enum definition", () => {
+    expect(() => e.enum([] as unknown as readonly string[])).toThrow(
+      "Enum must have at least one value"
+    );
+  });
 });
 
 describe("UrlSchema", () => {
@@ -195,6 +276,18 @@ describe("UrlSchema", () => {
       const httpUrl = new URL("http://example.com");
       expect(rule?.validate(httpUrl)).toBe(false);
     }
+  });
+
+  it("validates host and path rules", () => {
+    const hostSchema = e.url().host("example.com");
+    const hostRule = hostSchema._def.rules.find((r) => r.name === "host");
+    expect(hostRule?.validate(new URL("https://example.com"))).toBe(true);
+    expect(hostRule?.validate(new URL("https://other.com"))).toBe(false);
+
+    const pathSchema = e.url().withPath();
+    const pathRule = pathSchema._def.rules.find((r) => r.name === "withPath");
+    expect(pathRule?.validate(new URL("https://example.com/path"))).toBe(true);
+    expect(pathRule?.validate(new URL("https://example.com/"))).toBe(false);
   });
 });
 
@@ -240,5 +333,14 @@ describe("JsonSchema", () => {
     expect(rule?.validate({ key: "value" })).toBe(true);
     expect(rule?.validate(["a", "b"])).toBe(false);
     expect(rule?.validate(null)).toBe(false);
+  });
+
+  it("validates custom rules", () => {
+    const schema = e
+      .json<{ port: number }>()
+      .validate((value) => value.port > 0, "Port must be positive");
+    const rule = schema._def.rules.find((r) => r.name === "validate");
+    expect(rule?.validate({ port: 1 })).toBe(true);
+    expect(rule?.validate({ port: 0 })).toBe(false);
   });
 });

@@ -59,8 +59,9 @@ describe("formatPretty", () => {
 
   it("masks secret examples", () => {
     const output = formatPretty(sampleErrors);
-    // The example for API_KEY should be masked
     expect(output).toContain("API_KEY");
+    expect(output).not.toContain("your_api_key_here");
+    expect(output).toContain("*");
   });
 
   it("shows received values", () => {
@@ -87,6 +88,16 @@ describe("formatJson", () => {
     expect(firstError.variable).toBe("DATABASE_URL");
     expect(firstError.reason).toBe("missing");
     expect(firstError.expected).toBe("URL");
+  });
+
+  it("preserves secret flag", () => {
+    const output = formatJson(sampleErrors);
+    const parsed = JSON.parse(output);
+
+    const secretError = parsed.errors.find(
+      (e: ValidationError) => e.variable === "API_KEY"
+    );
+    expect(secretError.isSecret).toBe(true);
   });
 
   it("includes received when present", () => {
