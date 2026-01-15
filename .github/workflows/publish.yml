@@ -43,4 +43,4 @@ jobs:
         run: pnpm exec publint
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance
+        run: npm publish --provenance --access public
