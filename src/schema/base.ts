@@ -108,6 +108,53 @@ export abstract class BaseSchema<T, Optional extends boolean = false> {
   }
 
   /**
+   * Add a custom validator with structured result
+   * @example
+   * ```typescript
+   * e.string().custom((value) => {
+   *   if (!isValidApiKey(value)) {
+   *     return { valid: false, message: "Invalid API key format" };
+   *   }
+   *   return { valid: true };
+   * });
+   * ```
+   */
+  custom(
+    validator: (value: T) => { valid: boolean; message?: string } | boolean,
+    defaultMessage: string = "Custom validation failed"
+  ): this {
+    return this.clone({
+      rules: [
+        ...this._def.rules,
+        {
+          name: "custom",
+          message: defaultMessage,
+          validate: (value: T) => {
+            const result = validator(value);
+            if (typeof result === "boolean") return result;
+            return result.valid;
+          },
+        },
+      ],
+    });
+  }
+
+  /**
+   * Transform the value after validation
+   * @example
+   * ```typescript
+   * e.string()
+   *   .transform((s) => s.toLowerCase())
+   *   .transform((s) => s.trim());
+   * ```
+   */
+  transform(fn: (value: T) => T): this {
+    return this.clone({
+      transforms: [...(this._def.transforms ?? []), fn],
+    });
+  }
+
+  /**
    * Get a human-readable type description
    */
   abstract getTypeDescription(): string;

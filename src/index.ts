@@ -31,12 +31,18 @@ export {
   enum as enumType,
   url,
   json,
+  array,
+  duration,
+  path,
   StringSchema,
   NumberSchema,
   BooleanSchema,
   EnumSchema,
   UrlSchema,
   JsonSchema,
+  ArraySchema,
+  DurationSchema,
+  PathSchema,
   BaseSchema,
 } from "./schema/index.js";
 
@@ -52,6 +58,9 @@ export { EnvValidationError, formatErrors } from "./validation/index.js";
 
 // Reporters
 export { formatPretty, formatJson, formatMinimal } from "./reporters/index.js";
+
+// Dotenv utilities
+export { loadDotenv, loadDotenvFiles, parseDotenv } from "./dotenv.js";
 
 // Types
 export type {

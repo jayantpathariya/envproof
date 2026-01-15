@@ -1,0 +1,27 @@
+# Source files
+src/
+tests/
+examples/
+
+# Config files
+*.config.ts
+*.config.js
+tsconfig.json
+eslint.config.js
+.prettierrc
+.prettierignore
+
+# Development
+.github/
+.git/
+.gitignore
+.DS_Store
+coverage/
+
+# Workspace
+pnpm-workspace.yaml
+pnpm-lock.yaml
+
+# Documentation (optional - remove if you want them in npm)
+# CONTRIBUTING.md
+# CHANGELOG.md

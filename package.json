@@ -1,8 +1,9 @@
 {
   "name": "envproof",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript-first environment variable validation with schema-driven type safety",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,15 +25,23 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsup && tsup --config tsup.cli.config.ts",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run typecheck && pnpm run test:run && pnpm run build",
+    "prepack": "publint"
   },
   "keywords": [
     "environment",
@@ -43,14 +52,27 @@
     "schema",
     "config",
     "configuration",
-    "dotenv"
+    "dotenv",
+    "env-validation",
+    "environment-validation",
+    "config-validation",
+    "zod-alternative",
+    "type-safety",
+    "fail-fast",
+    "12-factor"
   ],
   "author": "Jayant Pathariya",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@types/node": "^25.0.5",
+    "@vitest/coverage-v8": "^4.0.16",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "publint": "^0.3.4",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.21.0",
     "vitest": "^4.0.16"
   },
   "engines": {

@@ -120,6 +120,34 @@ export class StringSchema<Optional extends boolean = false> extends BaseSchema<
     );
   }
 
+  /**
+   * Require value to be a valid IP address
+   * @param options.version - 'v4', 'v6', or 'any' (default: 'any')
+   * @example
+   * ```typescript
+   * e.string().ip() // any version
+   * e.string().ip({ version: 'v4' }) // IPv4 only
+   * e.string().ip({ version: 'v6' }) // IPv6 only
+   * ```
+   */
+  ip(options?: { version?: "v4" | "v6" | "any" }): this {
+    const version = options?.version ?? "any";
+
+    return this.refine(
+      (value) => {
+        if (version === "v4" || version === "any") {
+          if (isValidIPv4(value)) return true;
+        }
+        if (version === "v6" || version === "any") {
+          if (isValidIPv6(value)) return true;
+        }
+        return false;
+      },
+      `Must be a valid IP${version !== "any" ? version.toUpperCase() : ""} address`,
+      "ip"
+    );
+  }
+
   override getTypeDescription(): string {
     const rules = this._def.rules;
     const parts: string[] = ["string"];
@@ -154,6 +182,32 @@ export class StringSchema<Optional extends boolean = false> extends BaseSchema<
  */
 function coerceString(value: string): CoercionResult<string> {
   return { success: true, value };
+}
+
+/**
+ * Validate IPv4 address
+ */
+function isValidIPv4(value: string): boolean {
+  const parts = value.split(".");
+  if (parts.length !== 4) return false;
+
+  for (const part of parts) {
+    const num = parseInt(part, 10);
+    if (isNaN(num) || num < 0 || num > 255) return false;
+    // Reject leading zeros (e.g., "01" is invalid)
+    if (part !== String(num)) return false;
+  }
+  return true;
+}
+
+/**
+ * Validate IPv6 address
+ */
+function isValidIPv6(value: string): boolean {
+  // Simplified IPv6 validation - handles full form and :: shorthand
+  const ipv6Regex =
+    /^([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}$|^::$|^([0-9a-f]{1,4}:){1,7}:$|^:(:([0-9a-f]{1,4})){1,7}$|^([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}$|^([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}$|^([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}$|^([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}$|^([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}$|^[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}$/i;
+  return ipv6Regex.test(value);
 }
 
 /**

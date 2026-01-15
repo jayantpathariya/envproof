@@ -3,6 +3,8 @@
 > TypeScript-first environment variable validation with schema-driven type safety
 
 [![npm version](https://img.shields.io/npm/v/envproof.svg)](https://www.npmjs.com/package/envproof)
+[![CI](https://github.com/jayantpathariya/envproof/actions/workflows/ci.yml/badge.svg)](https://github.com/jayantpathariya/envproof/actions/workflows/ci.yml)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/envproof)](https://bundlephobia.com/package/envproof)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 EnvProof validates environment variables at application startup and fails fast with human-readable errors. No more runtime crashes from missing or invalid configuration.
@@ -17,6 +19,18 @@ EnvProof validates environment variables at application startup and fails fast w
 - **📄 .env.example generation** - Auto-generate documentation
 - **🚀 Zero dependencies** - Lightweight and fast
 - **🌐 Framework-agnostic** - Works everywhere Node.js runs
+
+## Why EnvProof?
+
+| Feature                 | EnvProof |  Zod  | t3-env | envalid |
+| ----------------------- | :------: | :---: | :----: | :-----: |
+| Zero dependencies       |    ✅    |  ❌   |   ❌   |   ❌    |
+| Built-in CLI            |    ✅    |  ❌   |   ❌   |   ✅    |
+| .env.example generation |    ✅    |  ❌   |   ❌   |   ❌    |
+| Bundle size             |   ~5KB   | ~60KB | ~65KB  |  ~15KB  |
+| First-class env focus   |    ✅    |  ❌   |   ✅   |   ✅    |
+| Type inference          |    ✅    |  ✅   |   ✅   |   ⚠️    |
+| Human-readable errors   |    ✅    |  ⚠️   |   ⚠️   |   ✅    |
 
 ## Installation
 

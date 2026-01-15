@@ -3,8 +3,9 @@
  * Main entry point for environment validation
  */
 
-import type { EnvSchema, InferEnv, EnvOptions } from "./types.js";
+import type { EnvSchema, InferEnv, EnvOptions, AnySchema } from "./types.js";
 import { validate, handleValidationFailure } from "./validation/engine.js";
+import { loadDotenv } from "./dotenv.js";
 
 /**
  * Create and validate a typed environment object
@@ -27,8 +28,19 @@ export function createEnv<T extends EnvSchema>(
   schema: T,
   options: EnvOptions = {}
 ): InferEnv<T> {
-  const source = options.source ?? process.env;
-  const result = validate(schema, source, options);
+  // Load environment variables from .env file if requested
+  let source = options.source ?? process.env;
+
+  if (options.dotenv) {
+    const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
+    // Merge: process.env takes precedence over .env file
+    source = { ...dotenvVars, ...source };
+  }
+
+  // Apply environment-specific schema modifications
+  const modifiedSchema = applyEnvironmentRules(schema, options);
+
+  const result = validate(modifiedSchema, source, options);
 
   if (!result.success) {
     handleValidationFailure(result.errors, options);
@@ -36,6 +48,61 @@ export function createEnv<T extends EnvSchema>(
 
   // Freeze the object to prevent modifications
   return Object.freeze(result.data!) as InferEnv<T>;
+}
+
+/**
+ * Apply environment-specific rules to schema
+ */
+function applyEnvironmentRules<T extends EnvSchema>(
+  schema: T,
+  options: EnvOptions
+): T {
+  const { environment, requireInProduction, optionalInDevelopment } = options;
+
+  if (!environment) return schema;
+
+  const isProduction = environment === "production";
+  const isDevelopment = environment === "development" || environment === "dev";
+
+  // Check if we need to modify anything
+  const needsModification =
+    (isProduction && requireInProduction?.length) ||
+    (isDevelopment && optionalInDevelopment?.length);
+
+  if (!needsModification) return schema;
+
+  // Clone the schema
+  const modifiedSchema: Record<string, AnySchema> = { ...schema };
+
+  // Make specified variables required in production
+  if (isProduction && requireInProduction) {
+    for (const key of requireInProduction) {
+      const fieldSchema = modifiedSchema[key];
+      if (fieldSchema && fieldSchema._def.isOptional) {
+        // Clone the schema object while preserving prototype
+        const cloned = Object.create(Object.getPrototypeOf(fieldSchema));
+        Object.assign(cloned, fieldSchema);
+        cloned._def = { ...fieldSchema._def, isOptional: false };
+        modifiedSchema[key] = cloned;
+      }
+    }
+  }
+
+  // Make specified variables optional in development
+  if (isDevelopment && optionalInDevelopment) {
+    for (const key of optionalInDevelopment) {
+      const fieldSchema = modifiedSchema[key];
+      if (fieldSchema) {
+        // Clone the schema object while preserving prototype
+        const cloned = Object.create(Object.getPrototypeOf(fieldSchema));
+        Object.assign(cloned, fieldSchema);
+        cloned._def = { ...fieldSchema._def, isOptional: true };
+        modifiedSchema[key] = cloned;
+      }
+    }
+  }
+
+  return modifiedSchema as T;
 }
 
 /**
@@ -56,6 +123,16 @@ export function validateEnv<T extends EnvSchema>(
   schema: T,
   options: Omit<EnvOptions, "onError"> = {}
 ) {
-  const source = options.source ?? process.env;
-  return validate(schema, source, options);
+  // Load environment variables from .env file if requested
+  let source = options.source ?? process.env;
+
+  if (options.dotenv) {
+    const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
+    source = { ...dotenvVars, ...source };
+  }
+
+  // Apply environment-specific schema modifications
+  const modifiedSchema = applyEnvironmentRules(schema, options);
+
+  return validate(modifiedSchema, source, options);
 }

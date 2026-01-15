@@ -68,7 +68,15 @@ function validateVariable(
     }
   }
 
-  return { value: coercionResult.value };
+  // Apply transforms
+  let finalValue = coercionResult.value;
+  if (def.transforms && def.transforms.length > 0) {
+    for (const transform of def.transforms) {
+      finalValue = transform(finalValue);
+    }
+  }
+
+  return { value: finalValue };
 }
 
 /**

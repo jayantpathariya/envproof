@@ -14,7 +14,10 @@ export type SchemaType =
   | "boolean"
   | "enum"
   | "url"
-  | "json";
+  | "json"
+  | "array"
+  | "duration"
+  | "path";
 
 /** Validation rule for schemas */
 export interface ValidationRule<T = unknown> {
@@ -39,6 +42,8 @@ export interface SchemaDefinition<T> {
   rules: ValidationRule<T>[];
   coerce: (value: string) => CoercionResult<T>;
   enumValues?: readonly string[];
+  /** Transform functions applied after validation */
+  transforms?: ((value: T) => T)[];
 }
 
 // ============================================================
@@ -119,6 +124,21 @@ export interface EnvOptions {
 
   /** Error reporter */
   reporter?: ReporterType | CustomReporter;
+
+  /** Load .env file automatically */
+  dotenv?: boolean;
+
+  /** Path to .env file (default: '.env') */
+  dotenvPath?: string;
+
+  /** Current environment (e.g., 'production', 'development') */
+  environment?: string;
+
+  /** Variables that must be set in production */
+  requireInProduction?: string[];
+
+  /** Variables that are optional in development */
+  optionalInDevelopment?: string[];
 }
 
 // ============================================================
@@ -136,6 +156,8 @@ export interface AnySchemaDefinition {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   coerce: (value: string) => CoercionResult<any>;
   enumValues?: readonly string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transforms?: ((value: any) => any)[];
 }
 
 /** Base interface that all schemas implement */
