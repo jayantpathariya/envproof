@@ -359,4 +359,242 @@ describe("Multi-Environment Support", () => {
     expect(devResult.success).toBe(true);
     expect(devResult.data?.API_KEY).toBeUndefined();
   });
+
+  it("should work with 'dev' shorthand", () => {
+    const schema = { API_KEY: e.string() };
+    const result = validateEnv(schema, {
+      source: {},
+      environment: "dev",
+      optionalInDevelopment: ["API_KEY"],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should pass through when no environment modifications needed", () => {
+    const schema = { PORT: e.number().default(3000) };
+    const result = validateEnv(schema, {
+      source: {},
+      environment: "staging",
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("Path Schema - Additional Coverage", () => {
+  let tempDir: string;
+  let tempFile: string;
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "envproof-test-"));
+    tempFile = path.join(tempDir, "test.txt");
+    fs.writeFileSync(tempFile, "test content");
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it("should validate relative paths", () => {
+    const schema = { PATH: e.path().relative() };
+
+    const rel = validateEnv(schema, { source: { PATH: "./relative/path" } });
+    expect(rel.success).toBe(true);
+
+    const abs = validateEnv(schema, { source: { PATH: tempFile } });
+    expect(abs.success).toBe(false);
+  });
+
+  it("should validate file extensions", () => {
+    const schema = { CONFIG: e.path().extension(".json") };
+
+    const valid = validateEnv(schema, {
+      source: { CONFIG: "/path/to/config.json" },
+    });
+    expect(valid.success).toBe(true);
+
+    const invalid = validateEnv(schema, {
+      source: { CONFIG: "/path/to/config.yaml" },
+    });
+    expect(invalid.success).toBe(false);
+  });
+
+  it("should validate multiple extensions", () => {
+    const schema = { CONFIG: e.path().extension([".json", ".yaml"]) };
+
+    const json = validateEnv(schema, {
+      source: { CONFIG: "/path/to/config.json" },
+    });
+    expect(json.success).toBe(true);
+
+    const yaml = validateEnv(schema, {
+      source: { CONFIG: "/path/to/config.yaml" },
+    });
+    expect(yaml.success).toBe(true);
+
+    const txt = validateEnv(schema, {
+      source: { CONFIG: "/path/to/config.txt" },
+    });
+    expect(txt.success).toBe(false);
+  });
+
+  it("should validate readable paths", () => {
+    const schema = { CONFIG: e.path().readable() };
+    const result = validateEnv(schema, { source: { CONFIG: tempFile } });
+    expect(result.success).toBe(true);
+  });
+
+  it("should validate writable paths", () => {
+    const schema = { DIR: e.path().writable() };
+    const result = validateEnv(schema, { source: { DIR: tempDir } });
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject empty paths", () => {
+    const schema = { PATH: e.path() };
+    const result = validateEnv(schema, { source: { PATH: "   " } });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("Array Schema - Additional Coverage", () => {
+  it("should validate maxLength", () => {
+    const schema = { ITEMS: e.array(e.string()).maxLength(2) };
+
+    const valid = validateEnv(schema, { source: { ITEMS: "a,b" } });
+    expect(valid.success).toBe(true);
+
+    const invalid = validateEnv(schema, { source: { ITEMS: "a,b,c" } });
+    expect(invalid.success).toBe(false);
+  });
+
+  it("should validate nonEmpty", () => {
+    const schema = { ITEMS: e.array(e.string()).nonEmpty() };
+
+    const valid = validateEnv(schema, { source: { ITEMS: "a" } });
+    expect(valid.success).toBe(true);
+  });
+
+  it("should handle invalid item coercion", () => {
+    const schema = { NUMS: e.array(e.number()) };
+    const result = validateEnv(schema, { source: { NUMS: "1,abc,3" } });
+    expect(result.success).toBe(false);
+  });
+
+  it("should get type description", () => {
+    const schema = e.array(e.string());
+    expect(schema.getTypeDescription()).toBe("array of string");
+  });
+
+  it("should get example", () => {
+    const schema = e.array(e.string());
+    expect(schema.getExample()).toContain(",");
+  });
+});
+
+describe("Duration Schema - Additional Coverage", () => {
+  it("should parse pure numbers as milliseconds", () => {
+    const schema = { DELAY: e.duration() };
+    const result = validateEnv(schema, { source: { DELAY: "500" } });
+    expect(result.success).toBe(true);
+    expect(result.data?.DELAY).toBe(500);
+  });
+
+  it("should parse weeks", () => {
+    const schema = { TTL: e.duration() };
+    const result = validateEnv(schema, { source: { TTL: "2w" } });
+    expect(result.success).toBe(true);
+    expect(result.data?.TTL).toBe(2 * 7 * 24 * 60 * 60 * 1000);
+  });
+
+  it("should reject invalid duration format", () => {
+    const schema = { DELAY: e.duration() };
+    const result = validateEnv(schema, { source: { DELAY: "invalid" } });
+    expect(result.success).toBe(false);
+  });
+
+  it("should get type description", () => {
+    const schema = e.duration();
+    expect(schema.getTypeDescription()).toContain("duration");
+  });
+});
+
+describe("URL Schema - Additional Coverage", () => {
+  it("should validate http() shorthand", () => {
+    const schema = { URL: e.url().http() };
+
+    const valid = validateEnv(schema, {
+      source: { URL: "https://example.com" },
+    });
+    expect(valid.success).toBe(true);
+
+    const invalid = validateEnv(schema, {
+      source: { URL: "ftp://example.com" },
+    });
+    expect(invalid.success).toBe(false);
+  });
+
+  it("should validate withPath()", () => {
+    const schema = { URL: e.url().withPath() };
+
+    const valid = validateEnv(schema, {
+      source: { URL: "https://example.com/path" },
+    });
+    expect(valid.success).toBe(true);
+
+    const invalid = validateEnv(schema, {
+      source: { URL: "https://example.com" },
+    });
+    expect(invalid.success).toBe(false);
+  });
+
+  it("should validate host()", () => {
+    const schema = { URL: e.url().host("example.com") };
+
+    const valid = validateEnv(schema, {
+      source: { URL: "https://example.com/path" },
+    });
+    expect(valid.success).toBe(true);
+
+    const invalid = validateEnv(schema, {
+      source: { URL: "https://other.com" },
+    });
+    expect(invalid.success).toBe(false);
+  });
+
+  it("should validate specific protocols", () => {
+    const schema = { URL: e.url().protocols(["wss"]) };
+
+    const valid = validateEnv(schema, {
+      source: { URL: "wss://socket.example.com" },
+    });
+    expect(valid.success).toBe(true);
+  });
+});
+
+describe("Dotenv - Additional Coverage", () => {
+  it("should handle lines without equals sign", () => {
+    const content = `
+FOO=bar
+INVALID_LINE
+BAZ=qux
+`;
+    const result = parseDotenv(content);
+    expect(result).toEqual({ FOO: "bar", BAZ: "qux" });
+  });
+
+  it("should handle empty keys", () => {
+    const content = `=value`;
+    const result = parseDotenv(content);
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it("should handle escape sequences", () => {
+    const content = `
+TAB="Hello\\tWorld"
+QUOTE="say \\"hello\\""
+`;
+    const result = parseDotenv(content);
+    expect(result.TAB).toBe("Hello\tWorld");
+    expect(result.QUOTE).toBe('say "hello"');
+  });
 });
