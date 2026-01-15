@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "TypeScript-first environment variable validation with schema-driven type safety",
   "type": "module",
+  "packageManager": "pnpm@9.15.4",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
