@@ -139,6 +139,52 @@ e.json<{ host: string; port: number }>()
   .validate((v) => v.port > 0, "Port must be positive");
 ```
 
+### Array
+
+Parse comma-separated values into arrays.
+
+```typescript
+e.array(e.string()); // "a,b,c" -> ["a", "b", "c"]
+e.array(e.number()).separator(";"); // "1;2;3" -> [1, 2, 3]
+e.array(e.string().email()).minLength(1); // Validate items & length
+```
+
+### Duration
+
+Parse human-readable duration strings into milliseconds.
+
+```typescript
+e.duration(); // "10m" -> 600000
+e.duration().min("1s").max("1h"); // "30s" -> 30000
+```
+
+Supports: `ms`, `s`, `m`, `h`, `d`, `w` (and long forms like `seconds`).
+
+### Path
+
+Validate file system paths.
+
+```typescript
+e.path()
+  .exists() // Must exist on disk
+  .isFile() // Must be a file
+  .isDirectory() // Must be a directory
+  .absolute() // Must be absolute path
+  .extension(".json") // specific extension
+  .readable() // Must be readable
+  .writable(); // Must be writable
+```
+
+### IP Address
+
+Validate IP addresses.
+
+```typescript
+e.string().ip(); // IPv4 or IPv6
+e.string().ip({ version: "v4" }); // IPv4 only
+e.string().ip({ version: "v6" }); // IPv6 only
+```
+
 ## Configuration Options
 
 ```typescript
@@ -156,7 +202,27 @@ const env = createEnv(schema, {
 
   // Output format
   reporter: "pretty", // 'pretty' | 'json' | 'minimal'
+
+  // Dotenv Loading (New in v1.1.0)
+  dotenv: true, // Load .env file automatically
+  dotenvPath: ".env.local", // Custom path
+
+  // Multi-Environment (New in v1.1.0)
+  environment: process.env.NODE_ENV, // Current environment
+  requireInProduction: ["API_KEY"], // Make optional vars required in prod
+  optionalInDevelopment: ["SENTRY_DSN"], // Make required vars optional in dev
 });
+```
+
+### Transforms & Custom Validators
+
+Chain transformations and custom rules:
+
+```typescript
+e.string()
+  .transform((s) => s.trim()) // Trim whitespace
+  .transform((s) => s.toLowerCase()) // Lowercase
+  .custom((val) => val.startsWith("sk_"), "Must start with sk_"); // Custom rule
 ```
 
 ## Error Output
