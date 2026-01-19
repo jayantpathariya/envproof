@@ -185,6 +185,30 @@ describe("Duration Schema", () => {
     const tooBig = validateEnv(schema, { source: { TIMEOUT: "2m" } });
     expect(tooBig.success).toBe(false);
   });
+
+  it("should accept string defaults", () => {
+    const schema = {
+      TIMEOUT: e.duration().default("30s"),
+      TTL: e.duration().default("1h"),
+      EXPIRY: e.duration().default("24h"),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+    expect(result.success).toBe(true);
+    expect(result.data?.TIMEOUT).toBe(30000); // 30 seconds
+    expect(result.data?.TTL).toBe(3600000); // 1 hour
+    expect(result.data?.EXPIRY).toBe(86400000); // 24 hours
+  });
+
+  it("should accept number defaults (milliseconds)", () => {
+    const schema = {
+      TIMEOUT: e.duration().default(5000),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+    expect(result.success).toBe(true);
+    expect(result.data?.TIMEOUT).toBe(5000);
+  });
 });
 
 describe("IP Validation", () => {

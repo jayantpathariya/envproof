@@ -12,7 +12,7 @@ import type { CoercionResult } from "../types.js";
  */
 export class JsonSchema<
   T = unknown,
-  Optional extends boolean = false
+  Optional extends boolean = false,
 > extends BaseSchema<T, Optional> {
   constructor() {
     super("json", coerceJson as (value: string) => CoercionResult<T>);

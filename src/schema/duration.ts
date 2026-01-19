@@ -66,6 +66,12 @@ function parseDuration(value: string): number | null {
  * // CACHE_TTL=1h
  * e.duration() // Result: 3600000 (ms)
  *
+ * // With string default (recommended)
+ * e.duration().default("24h")
+ *
+ * // With number default (milliseconds)
+ * e.duration().default(86400000)
+ *
  * // TIMEOUT=30s
  * e.duration().min("5s").max("5m")
  * ```
@@ -75,6 +81,25 @@ export class DurationSchema<
 > extends BaseSchema<number, Optional> {
   constructor() {
     super("duration", coerceDuration);
+  }
+
+  /**
+   * Set a default value
+   * Accepts duration string (e.g., "24h") or milliseconds
+   * @param value - Duration string or number in milliseconds
+   */
+  override default(value: string | number): DurationSchema<false> {
+    const defaultMs =
+      typeof value === "string" ? (parseDuration(value) ?? 0) : value;
+
+    if (defaultMs < 0) {
+      throw new Error("Duration default must be non-negative");
+    }
+
+    return this.clone({
+      isOptional: false,
+      defaultValue: defaultMs,
+    }) as unknown as DurationSchema<false>;
   }
 
   /**

@@ -72,12 +72,15 @@ console.log(env.API_KEY); // string
 e.string()
   .minLength(1) // Minimum length
   .maxLength(255) // Maximum length
+  .length(10) // Exact length
   .pattern(/^[A-Z]+$/) // Regex validation
   .email() // Email format
   .uuid() // UUID format
   .nonEmpty() // Must not be empty/whitespace
   .startsWith("sk_") // Must start with prefix
   .endsWith(".json") // Must end with suffix
+  .ip() // IP address (IPv4 or IPv6)
+  .ip({ version: "v4" }) // IPv4 only
   .secret() // Mask in error output
   .optional() // Allow undefined
   .default("fallback") // Default value
@@ -146,7 +149,9 @@ Parse comma-separated values into arrays.
 ```typescript
 e.array(e.string()); // "a,b,c" -> ["a", "b", "c"]
 e.array(e.number()).separator(";"); // "1;2;3" -> [1, 2, 3]
-e.array(e.string().email()).minLength(1); // Validate items & length
+e.array(e.string().email())
+  .minLength(1) // Minimum array length
+  .maxLength(10); // Maximum array length
 ```
 
 ### Duration
@@ -155,6 +160,8 @@ Parse human-readable duration strings into milliseconds.
 
 ```typescript
 e.duration(); // "10m" -> 600000
+e.duration().default("24h"); // Default: 86400000 (string supported!)
+e.duration().default(5000); // Or use milliseconds directly
 e.duration().min("1s").max("1h"); // "30s" -> 30000
 ```
 
@@ -184,6 +191,16 @@ e.string().ip(); // IPv4 or IPv6
 e.string().ip({ version: "v4" }); // IPv4 only
 e.string().ip({ version: "v6" }); // IPv6 only
 ```
+
+## Advanced Examples
+
+Check out the `/examples` folder for complete working examples:
+
+- **[basic.ts](examples/basic.ts)** - Simple usage
+- **[express.ts](examples/express.ts)** - Express.js integration  
+- **[nextjs.ts](examples/nextjs.ts)** - Next.js configuration
+- **[docker.ts](examples/docker.ts)** - Docker/container environments
+- **[monorepo.ts](examples/monorepo.ts)** - Monorepo shared configuration
 
 ## Configuration Options
 
@@ -485,6 +502,31 @@ type Env = InferEnv<typeof schema>;
 // { readonly PORT: number }
 ```
 
+## Dotenv Utilities
+
+EnvProof exports standalone dotenv utilities for advanced use cases:
+
+```typescript
+import { loadDotenv, loadDotenvFiles, parseDotenv } from "envproof";
+
+// Load .env file (similar to dotenv)
+loadDotenv(); // Loads .env by default
+loadDotenv(".env.local"); // Custom path
+
+// Load multiple .env files with priority
+loadDotenvFiles([".env.local", ".env"]); // .env.local takes precedence
+
+// Parse .env file content
+const envContent = `
+DATABASE_URL=postgresql://localhost:5432/db
+PORT=3000
+`;
+const parsed = parseDotenv(envContent);
+console.log(parsed); // { DATABASE_URL: '...', PORT: '3000' }
+```
+
+These utilities can be used independently of `createEnv()` if you need custom dotenv loading logic.
+
 ## API Reference
 
 ### `createEnv(schema, options?)`
@@ -525,6 +567,15 @@ Write .env.example file to disk.
 - `e.enum([...])` - Enumerated values
 - `e.url()` - URL values
 - `e.json<T>()` - JSON values
+- `e.array(itemSchema)` - Array values (comma-separated)
+- `e.duration()` - Duration values (e.g., "1h", "30m")
+- `e.path()` - File system paths
+
+### Dotenv Utilities
+
+- `loadDotenv(path?)` - Load .env file into process.env
+- `loadDotenvFiles(paths)` - Load multiple .env files with priority
+- `parseDotenv(content)` - Parse .env file content to object
 
 ## License
 

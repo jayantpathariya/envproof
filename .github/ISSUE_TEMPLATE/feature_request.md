@@ -10,27 +10,35 @@ assignees: ""
 
 A clear and concise description of the feature you'd like to see.
 
-## Use Case
+## Motivation
 
-Describe the problem you're trying to solve or the use case for this feature.
+Why is this feature needed? What problem does it solve?
 
 ## Proposed Solution
 
-How do you envision this feature working?
+Describe how you envision this feature working.
 
 ```typescript
-// Example API usage (if applicable)
+// Example usage of the proposed feature
 import { createEnv, e } from "envproof";
 
 const env = createEnv({
-  // Example of how the new feature would be used
+  // Your proposed API here
 });
 ```
 
 ## Alternatives Considered
 
-Have you considered any alternative solutions or workarounds?
+What alternatives have you considered? Why is this approach better?
 
 ## Additional Context
 
-Add any other context, examples, or screenshots about the feature request here.
+- How popular is this use case?
+- Are there similar features in other libraries?
+- Would this be a breaking change?
+
+## Would you be willing to implement this?
+
+- [ ] Yes, I can submit a PR
+- [ ] I can help with implementation details
+- [ ] I can only describe the feature

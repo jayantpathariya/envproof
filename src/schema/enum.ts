@@ -12,7 +12,7 @@ import type { CoercionResult, SchemaDefinition } from "../types.js";
  */
 export class EnumSchema<
   T extends readonly string[],
-  Optional extends boolean = false
+  Optional extends boolean = false,
 > extends BaseSchema<T[number], Optional> {
   private readonly _values: T;
 

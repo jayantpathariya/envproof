@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-19
+
+### Added
+
+- **Duration string defaults**: `.default("24h")` now supported - no more `.default(86400000)`
+- **Performance benchmarks**: Added 7 benchmark tests to prevent performance regressions
+- **Bundle size monitoring**: Added size-limit configuration to track bundle size
+- **Security documentation**: Added SECURITY.md with vulnerability reporting policy
+- **Migration guide**: Added comprehensive MIGRATION.md for migrating from Zod, t3-env, envalid, joi, and dotenv-safe
+- **Troubleshooting guide**: Added TROUBLESHOOTING.md with solutions to common issues
+- **Dependabot integration**: Automated dependency updates with grouped PRs
+- **CodeQL scanning**: Weekly security code scanning
+- **Release automation**: Automated GitHub releases with changelog extraction
+
+### Changed
+
+- Enhanced test suite: 148 tests (up from 115)
+- Improved VSCode developer experience with better settings and debug configurations
+- Updated dependencies to latest versions
+
+### Documentation
+
+- Added detailed examples for Docker/container environments
+- Added detailed examples for monorepo configurations
+- Enhanced API documentation with better examples
+- Added dotenv utilities documentation
+- Added more keywords for better npm discoverability
+
 ## [1.1.0] - 2026-01-15
 
 ### Added
@@ -22,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Enhanced test suite: 115 tests (up from 86)
+- Improved error messages for duration validation
 
 ## [1.0.0] - 2026-01-10
 
