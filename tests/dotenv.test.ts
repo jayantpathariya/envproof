@@ -229,7 +229,7 @@ KEY2=value2
   it("returns empty object for unreadable file", () => {
     const envPath = path.join(tempDir, ".env");
     fs.writeFileSync(envPath, "KEY1=value1", "utf-8");
-    
+
     // Try to make file unreadable (may not work on all systems)
     try {
       fs.chmodSync(envPath, 0o000);
@@ -276,7 +276,10 @@ KEY2=value2
 
   it("handles large files", () => {
     const envPath = path.join(tempDir, ".env");
-    const largeContent = Array.from({ length: 1000 }, (_, i) => `KEY${i}=value${i}`).join("\n");
+    const largeContent = Array.from(
+      { length: 1000 },
+      (_, i) => `KEY${i}=value${i}`
+    ).join("\n");
     fs.writeFileSync(envPath, largeContent, "utf-8");
 
     const result = loadDotenv(envPath);

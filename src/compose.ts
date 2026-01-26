@@ -28,9 +28,7 @@ import type { EnvSchema } from "./types.js";
  * // Contains all fields from both schemas
  * ```
  */
-export function mergeSchemas<T extends EnvSchema[]>(
-  ...schemas: T
-): EnvSchema {
+export function mergeSchemas<T extends EnvSchema[]>(...schemas: T): EnvSchema {
   return Object.assign({}, ...schemas);
 }
 

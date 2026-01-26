@@ -175,7 +175,11 @@ describe("validate", () => {
       PORT: e.number(),
     };
 
-    const result = validate(schema, { APP_PORT: "3000" }, { prefix: "APP_", stripPrefix: false });
+    const result = validate(
+      schema,
+      { APP_PORT: "3000" },
+      { prefix: "APP_", stripPrefix: false }
+    );
 
     expect(result.success).toBe(true);
     // When stripPrefix is false, the key remains prefixed in the data
