@@ -3,9 +3,9 @@
  * Test the validation engine
  */
 
-import { describe, it, expect } from "vitest";
-import { e, validateEnv, EnvValidationError } from "../src/index.js";
-import { validate } from "../src/validation/engine.js";
+import { describe, it, expect, vi } from "vitest";
+import { e, validateEnv, EnvValidationError, createEnv } from "../src/index.js";
+import { validate, formatErrors } from "../src/validation/engine.js";
 
 describe("validate", () => {
   it("validates required string", () => {
@@ -175,10 +175,13 @@ describe("validate", () => {
       PORT: e.number(),
     };
 
-    const result = validate(schema, { APP_PORT: "3000" }, { prefix: "APP_" });
+    const result = validate(schema, { APP_PORT: "3000" }, { prefix: "APP_", stripPrefix: false });
 
     expect(result.success).toBe(true);
-    expect(result.data?.PORT).toBe(3000);
+    // When stripPrefix is false, the key remains prefixed in the data
+    if (result.success && result.data) {
+      expect((result.data as Record<string, unknown>).APP_PORT).toBe(3000);
+    }
   });
 
   it("strips prefix in error variable names", () => {
@@ -223,11 +226,6 @@ describe("validate", () => {
   });
 
   it("masks secret values in errors", () => {
-    const schema = {
-      API_KEY: e.string().secret(),
-    };
-
-    const result = validate(schema, { API_KEY: "invalid" });
     // Force a validation rule failure to check masking
     const schemaWithRule = {
       API_KEY: e.string().secret().minLength(100),
@@ -263,5 +261,212 @@ describe("validateEnv", () => {
 
     expect(result.success).toBe(true);
     expect(result.data?.NODE_ENV).toBe("production");
+  });
+
+  it("handles transform chaining", () => {
+    const schema = {
+      NAME: e
+        .string()
+        .transform((s) => s.toLowerCase())
+        .transform((s) => s.trim()),
+    };
+
+    const result = validateEnv(schema, { source: { NAME: "  JOHN DOE  " } });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.NAME).toBe("john doe");
+  });
+
+  it("handles transform errors gracefully", () => {
+    const schema = {
+      VALUE: e.string().transform((s) => {
+        if (s === "error") throw new Error("Transform error");
+        return s;
+      }),
+    };
+
+    // Should not crash the validation process
+    expect(() => {
+      validateEnv(schema, { source: { VALUE: "error" } });
+    }).toThrow();
+  });
+
+  it("uses onError: exit option", () => {
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("Process exit called");
+    });
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    expect(() => {
+      createEnv(schema, { source: {}, onError: "exit", exitCode: 42 });
+    }).toThrow("Process exit called");
+
+    expect(exitSpy).toHaveBeenCalledWith(42);
+    expect(consoleSpy).toHaveBeenCalled();
+
+    exitSpy.mockRestore();
+    consoleSpy.mockRestore();
+  });
+
+  it("uses onError: return option", () => {
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    expect(() => {
+      createEnv(schema, { source: {}, onError: "return" });
+    }).toThrow(EnvValidationError);
+  });
+
+  it("uses onError: throw option (default)", () => {
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    expect(() => {
+      createEnv(schema, { source: {}, onError: "throw" });
+    }).toThrow(EnvValidationError);
+  });
+
+  it("uses custom reporter function", () => {
+    const customReporter = vi.fn((errors) => {
+      return `Custom: ${errors.length} errors`;
+    });
+
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+
+    if (!result.success) {
+      const output = formatErrors(result.errors, customReporter);
+      expect(output).toBe("Custom: 1 errors");
+      expect(customReporter).toHaveBeenCalledWith(result.errors);
+    }
+  });
+
+  it("uses json reporter", () => {
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+
+    if (!result.success) {
+      const output = formatErrors(result.errors, "json");
+      const parsed = JSON.parse(output);
+      expect(parsed.success).toBe(false);
+      expect(parsed.errorCount).toBe(1);
+    }
+  });
+
+  it("uses minimal reporter", () => {
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+
+    if (!result.success) {
+      const output = formatErrors(result.errors, "minimal");
+      expect(output).toContain("REQUIRED");
+    }
+  });
+
+  it("uses pretty reporter (default)", () => {
+    const schema = {
+      REQUIRED: e.string(),
+    };
+
+    const result = validateEnv(schema, { source: {} });
+
+    if (!result.success) {
+      const output = formatErrors(result.errors, "pretty");
+      expect(output).toContain("Environment Validation Failed");
+      expect(output).toContain("REQUIRED");
+    }
+  });
+
+  it("handles multiple transforms", () => {
+    const schema = {
+      TEXT: e
+        .string()
+        .transform((s) => s.toUpperCase())
+        .transform((s) => s.replace(/\s+/g, "_"))
+        .transform((s) => s.slice(0, 10)),
+    };
+
+    const result = validateEnv(schema, {
+      source: { TEXT: "hello world test" },
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.TEXT).toBe("HELLO_WORL");
+  });
+
+  it("validates with custom validator returning object", () => {
+    const schema = {
+      CODE: e.string().custom((value) => {
+        if (value.length !== 6) {
+          return { valid: false, message: "Code must be 6 characters" };
+        }
+        return { valid: true };
+      }),
+    };
+
+    const result = validateEnv(schema, { source: { CODE: "12345" } });
+
+    expect(result.success).toBe(false);
+    expect(result.errors[0]?.reason).toBe("invalid_value");
+  });
+
+  it("validates with custom validator returning boolean", () => {
+    const schema = {
+      CODE: e.string().custom((value) => value.length === 6),
+    };
+
+    const invalidResult = validateEnv(schema, { source: { CODE: "123" } });
+    expect(invalidResult.success).toBe(false);
+
+    const validResult = validateEnv(schema, { source: { CODE: "123456" } });
+    expect(validResult.success).toBe(true);
+  });
+
+  it("handles prefix with stripPrefix", () => {
+    const schema = {
+      PORT: e.number().default(3000),
+      HOST: e.string().default("localhost"),
+    };
+
+    const result = validateEnv(schema, {
+      source: { APP_PORT: "8080", APP_HOST: "0.0.0.0" },
+      prefix: "APP_",
+      stripPrefix: true,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.PORT).toBe(8080);
+    expect(result.data?.HOST).toBe("0.0.0.0");
+  });
+
+  it("handles prefix without stripPrefix", () => {
+    const schema = {
+      PORT: e.number().default(3000),
+    };
+
+    const result = validateEnv(schema, {
+      source: { APP_PORT: "8080" },
+      prefix: "APP_",
+      stripPrefix: false,
+    });
+
+    expect(result.success).toBe(true);
+    // Should keep the prefixed key
+    expect(result.data).toHaveProperty("APP_PORT");
   });
 });

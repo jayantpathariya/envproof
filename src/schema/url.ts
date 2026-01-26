@@ -109,10 +109,11 @@ function coerceUrl(value: string): CoercionResult<URL> {
   try {
     const url = new URL(trimmed);
     return { success: true, value: url };
-  } catch {
+  } catch (e) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
     return {
       success: false,
-      error: `Invalid URL format: "${value}"`,
+      error: `Invalid URL format: "${value}" (${errorMsg})`,
     };
   }
 }

@@ -103,11 +103,11 @@ export function validate<T extends EnvSchema>(
 
     if (result.error) {
       // Store with original key name for error reporting
-      result.error.variable = stripPrefix ? key : envKey;
+      result.error.variable = stripPrefix && prefix ? key : envKey;
       errors.push(result.error);
     } else {
       // Store with potentially stripped key
-      const outputKey = stripPrefix && prefix ? key : key;
+      const outputKey = stripPrefix && prefix ? key : envKey;
       data[outputKey] = result.value;
     }
   }

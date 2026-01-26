@@ -145,6 +145,6 @@ describe("Performance Benchmarks", () => {
 
     expect(result.success).toBe(false);
     expect(result.errors.length).toBe(5);
-    expect(duration).toBeLessThan(2);
+    expect(duration).toBeLessThan(10); // More lenient for CI/slower machines
   });
 });

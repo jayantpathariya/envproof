@@ -102,11 +102,12 @@ export function loadDotenv(filePath: string = ".env"): Record<string, string> {
  * @returns Merged key-value pairs
  */
 export function loadDotenvFiles(...paths: string[]): Record<string, string> {
-  let result: Record<string, string> = {};
+  const result: Record<string, string> = {};
 
   for (const filePath of paths) {
     const vars = loadDotenv(filePath);
-    result = { ...result, ...vars };
+    // Use Object.assign for better performance
+    Object.assign(result, vars);
   }
 
   return result;

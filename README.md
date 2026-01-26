@@ -242,6 +242,42 @@ e.string()
   .custom((val) => val.startsWith("sk_"), "Must start with sk_"); // Custom rule
 ```
 
+### Schema Composition
+
+Compose and reuse schemas with built-in utilities:
+
+```typescript
+import { mergeSchemas, extendSchema, pickSchema, omitSchema, prefixSchema } from "envproof";
+
+// Merge multiple schemas
+const baseSchema = {
+  NODE_ENV: e.enum(['dev', 'prod'] as const),
+  LOG_LEVEL: e.enum(['debug', 'info'] as const),
+};
+
+const serverSchema = {
+  PORT: e.number().port(),
+  HOST: e.string().default('localhost'),
+};
+
+const fullSchema = mergeSchemas(baseSchema, serverSchema);
+
+// Extend a base schema
+const extended = extendSchema(baseSchema, {
+  API_KEY: e.string().secret(),
+});
+
+// Pick specific fields
+const dbOnly = pickSchema(fullSchema, ['DATABASE_URL', 'REDIS_URL']);
+
+// Omit specific fields
+const withoutPort = omitSchema(fullSchema, ['PORT']);
+
+// Add prefix to all keys
+const prefixed = prefixSchema(serverSchema, 'APP_');
+// Result: { APP_PORT: e.number().port(), APP_HOST: e.string()... }
+```
+
 ## Error Output
 
 When validation fails, EnvProof provides clear, actionable error messages:
@@ -299,6 +335,16 @@ const env = createEnv(schema, { reporter: "json" });
     }
   ]
 }
+```
+
+### Minimal Reporter (for logs)
+
+```typescript
+const env = createEnv(schema, { reporter: "minimal" });
+```
+
+```
+❌ Environment validation failed (3 errors): DATABASE_URL, API_KEY, PORT
 ```
 
 ## .env.example Generation
@@ -576,6 +622,14 @@ Write .env.example file to disk.
 - `loadDotenv(path?)` - Load .env file into process.env
 - `loadDotenvFiles(paths)` - Load multiple .env files with priority
 - `parseDotenv(content)` - Parse .env file content to object
+
+### Schema Composition Utilities
+
+- `mergeSchemas(...schemas)` - Merge multiple schemas into one
+- `extendSchema(base, extension)` - Extend a base schema with additional fields
+- `pickSchema(schema, keys)` - Create a schema with only specified keys
+- `omitSchema(schema, keys)` - Create a schema without specified keys
+- `prefixSchema(schema, prefix)` - Add a prefix to all schema keys
 
 ## License
 

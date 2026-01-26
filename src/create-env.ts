@@ -34,7 +34,8 @@ export function createEnv<T extends EnvSchema>(
   if (options.dotenv) {
     const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
     // Merge: process.env takes precedence over .env file
-    source = { ...dotenvVars, ...source };
+    // Use Object.assign for better performance with large objects
+    source = Object.assign({}, dotenvVars, source);
   }
 
   // Apply environment-specific schema modifications
@@ -46,8 +47,26 @@ export function createEnv<T extends EnvSchema>(
     handleValidationFailure(result.errors, options);
   }
 
+  // Type narrowing: if we reach here, result.success is true and data exists
+  if (!result.data) {
+    throw new Error("Validation succeeded but no data returned");
+  }
+
   // Freeze the object to prevent modifications
-  return Object.freeze(result.data!) as InferEnv<T>;
+  return Object.freeze(result.data) as InferEnv<T>;
+}
+
+/**
+ * Clone a schema with modified optional flag
+ */
+function cloneSchemaWithOptional(
+  schema: AnySchema,
+  isOptional: boolean
+): AnySchema {
+  const cloned = Object.create(Object.getPrototypeOf(schema));
+  Object.assign(cloned, schema);
+  cloned._def = { ...schema._def, isOptional };
+  return cloned;
 }
 
 /**
@@ -79,11 +98,7 @@ function applyEnvironmentRules<T extends EnvSchema>(
     for (const key of requireInProduction) {
       const fieldSchema = modifiedSchema[key];
       if (fieldSchema && fieldSchema._def.isOptional) {
-        // Clone the schema object while preserving prototype
-        const cloned = Object.create(Object.getPrototypeOf(fieldSchema));
-        Object.assign(cloned, fieldSchema);
-        cloned._def = { ...fieldSchema._def, isOptional: false };
-        modifiedSchema[key] = cloned;
+        modifiedSchema[key] = cloneSchemaWithOptional(fieldSchema, false);
       }
     }
   }
@@ -93,11 +108,7 @@ function applyEnvironmentRules<T extends EnvSchema>(
     for (const key of optionalInDevelopment) {
       const fieldSchema = modifiedSchema[key];
       if (fieldSchema) {
-        // Clone the schema object while preserving prototype
-        const cloned = Object.create(Object.getPrototypeOf(fieldSchema));
-        Object.assign(cloned, fieldSchema);
-        cloned._def = { ...fieldSchema._def, isOptional: true };
-        modifiedSchema[key] = cloned;
+        modifiedSchema[key] = cloneSchemaWithOptional(fieldSchema, true);
       }
     }
   }
@@ -128,7 +139,8 @@ export function validateEnv<T extends EnvSchema>(
 
   if (options.dotenv) {
     const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
-    source = { ...dotenvVars, ...source };
+    // Use Object.assign for better performance with large objects
+    source = Object.assign({}, dotenvVars, source);
   }
 
   // Apply environment-specific schema modifications
