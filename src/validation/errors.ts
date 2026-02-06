@@ -114,6 +114,39 @@ export function createParseError(
 }
 
 /**
+ * Create a validation error for an unknown variable in strict mode
+ */
+export function createUnknownError(
+  variable: string,
+  received: string
+): ValidationError {
+  return {
+    variable,
+    reason: "unknown",
+    message: "Variable is set but not defined in schema",
+    expected: "variable defined in schema",
+    received: truncateValue(received),
+    isSecret: false,
+  };
+}
+
+/**
+ * Create a validation error for cross-field validation failures
+ */
+export function createCrossFieldError(
+  message: string,
+  variable = "_schema"
+): ValidationError {
+  return {
+    variable,
+    reason: "cross_field",
+    message,
+    expected: "cross-field constraint",
+    isSecret: false,
+  };
+}
+
+/**
  * Truncate long values for display
  */
 function truncateValue(value: string, maxLength = 50): string {

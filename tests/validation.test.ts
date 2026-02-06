@@ -4,6 +4,9 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { e, validateEnv, EnvValidationError, createEnv } from "../src/index.js";
 import { validate, formatErrors } from "../src/validation/engine.js";
 
@@ -218,6 +221,35 @@ describe("validate", () => {
     expect(result.errors[0]?.variable).toBe("APP_PORT");
   });
 
+  it("fails on unknown variables in strict mode", () => {
+    const schema = {
+      PORT: e.number(),
+    };
+
+    const result = validate(
+      schema,
+      { PORT: "3000", EXTRA_FLAG: "1" },
+      { strict: true }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.errors.some((error) => error.reason === "unknown")).toBe(true);
+  });
+
+  it("ignores unknown variables listed in strictIgnore", () => {
+    const schema = {
+      PORT: e.number(),
+    };
+
+    const result = validate(
+      schema,
+      { PORT: "3000", EXTRA_FLAG: "1" },
+      { strict: true, strictIgnore: ["EXTRA_FLAG"] }
+    );
+
+    expect(result.success).toBe(true);
+  });
+
   it("returns invalid_type for invalid JSON", () => {
     const schema = {
       CONFIG: e.json(),
@@ -321,9 +353,26 @@ describe("validateEnv", () => {
       REQUIRED: e.string(),
     };
 
-    expect(() => {
-      createEnv(schema, { source: {}, onError: "return" });
-    }).toThrow(EnvValidationError);
+    const result = createEnv(schema, { source: {}, onError: "return" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]?.variable).toBe("REQUIRED");
+    }
+  });
+
+  it("returns success result when onError: return and validation passes", () => {
+    const schema = {
+      PORT: e.number().default(3000),
+    };
+
+    const result = createEnv(schema, { source: {}, onError: "return" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.PORT).toBe(3000);
+    }
   });
 
   it("uses onError: throw option (default)", () => {
@@ -472,5 +521,60 @@ describe("validateEnv", () => {
     expect(result.success).toBe(true);
     // Should keep the prefixed key
     expect(result.data).toHaveProperty("APP_PORT");
+  });
+
+  it("loads layered dotenv files using environment", () => {
+    const schema = {
+      HOST: e.string(),
+      PORT: e.number(),
+    };
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "envproof-dotenv-"));
+    const originalCwd = process.cwd();
+
+    fs.writeFileSync(path.join(tempDir, ".env"), "HOST=localhost\nPORT=3000\n");
+    fs.writeFileSync(path.join(tempDir, ".env.production"), "PORT=8080\n");
+
+    try {
+      process.chdir(tempDir);
+      const result = validateEnv(schema, {
+        dotenv: true,
+        environment: "production",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.HOST).toBe("localhost");
+      expect(result.data?.PORT).toBe(8080);
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("expands dotenv variables when dotenvExpand is enabled", () => {
+    const schema = {
+      HOST: e.string(),
+      API_URL: e.string(),
+    };
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "envproof-dotenv-"));
+    const originalCwd = process.cwd();
+
+    fs.writeFileSync(
+      path.join(tempDir, ".env"),
+      "HOST=api.example.com\nAPI_URL=https://${HOST}/v1\n"
+    );
+
+    try {
+      process.chdir(tempDir);
+      const result = validateEnv(schema, {
+        dotenv: true,
+        dotenvExpand: true,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.API_URL).toBe("https://api.example.com/v1");
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

@@ -112,3 +112,53 @@ export function loadDotenvFiles(...paths: string[]): Record<string, string> {
 
   return result;
 }
+
+/**
+ * Expand ${VAR} references in dotenv values.
+ * Variables from `vars` take precedence over `context`.
+ */
+export function expandDotenvVars(
+  vars: Record<string, string>,
+  context: Record<string, string | undefined> = process.env
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  const resolving = new Set<string>();
+  const pattern = /\\?\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+
+  const resolveKey = (key: string): string => {
+    if (result[key] !== undefined) {
+      return result[key];
+    }
+
+    if (resolving.has(key)) {
+      return "";
+    }
+
+    const raw = vars[key];
+    if (raw === undefined) {
+      return "";
+    }
+
+    resolving.add(key);
+    const expanded = raw.replace(pattern, (match, varName: string) => {
+      if (match.startsWith("\\")) {
+        return match.slice(1);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(vars, varName)) {
+        return resolveKey(varName);
+      }
+
+      return context[varName] ?? "";
+    });
+    resolving.delete(key);
+    result[key] = expanded;
+    return expanded;
+  };
+
+  for (const key of Object.keys(vars)) {
+    resolveKey(key);
+  }
+
+  return result;
+}

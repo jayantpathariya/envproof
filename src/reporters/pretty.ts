@@ -88,6 +88,20 @@ export function formatPretty(errors: ValidationError[]): string {
     lines.push("");
   }
 
+  // Unknown variables section
+  const unknown = grouped.get("unknown") ?? [];
+  if (unknown.length > 0) {
+    lines.push(...formatSection("UNKNOWN VARIABLES", unknown));
+    lines.push("");
+  }
+
+  // Cross-field validation section
+  const crossField = grouped.get("cross_field") ?? [];
+  if (crossField.length > 0) {
+    lines.push(...formatSection("SCHEMA RULES", crossField));
+    lines.push("");
+  }
+
   // Tip
   lines.push(
     `${colors.cyan}Tip:${colors.reset} Run ${colors.bold}npx envproof generate${colors.reset} to create a .env.example file`
@@ -175,6 +189,10 @@ function getStatusText(error: ValidationError): string {
       return error.message;
     case "parse_error":
       return "Parse error";
+    case "unknown":
+      return "Unknown variable";
+    case "cross_field":
+      return error.message;
     default:
       return error.message;
   }

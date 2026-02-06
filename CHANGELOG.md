@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-06
+
+### Added
+
+- **CLI `init` command**: `envproof init` now scaffolds `env.config.ts` and `.env.example`
+- **Strict mode**: Added `strict` and `strictIgnore` options to fail on unknown variables
+- **Cross-field validation**: Added `crossValidate` option for schema-level rules across multiple vars
+- **Layered dotenv loading**: `dotenvPath` now supports `string[]` for loading multiple files in order
+- **Dotenv variable expansion**: Added `expandDotenvVars()` utility and `dotenvExpand` option
+- **CLI argument parser module**: Added dedicated parser with support for `--strict`
+- **CI smoke tests for built CLI**: Added `dist` CLI smoke tests and matrix alignment for Node 18/20/22
+
+### Fixed
+
+- **CLI version output**: `envproof version` now reads package version dynamically instead of a stale constant
+- **Schema loader refactor**: Consolidated duplicated schema-loading logic into shared CLI module
+- **Windows-safe module URL conversion**: Switched schema loading to `pathToFileURL`
+- **`onError: "return"` semantics**: `createEnv` now returns a `ValidationResult` instead of throwing
+- **README dotenv API docs**: Corrected `loadDotenvFiles` usage and clarified return semantics
+
+### Changed
+
+- **Validation error reasons**: Added `unknown` and `cross_field` error categories
+- **Pretty reporter output**: Added sections for unknown vars and cross-field rule failures
+- **CLI tests**: Replaced placeholder tests with real checks for force/output/reporter/options
+- **Test suite**: Increased from 247 to 264 tests
+
 ## [1.3.0] - 2026-01-26
 
 ### Added

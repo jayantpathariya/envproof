@@ -16,6 +16,7 @@ import {
   createEmptyError,
   createTypeError,
   createValueError,
+  createUnknownError,
   EnvValidationError,
 } from "./errors.js";
 import { formatPretty } from "../reporters/pretty.js";
@@ -90,12 +91,14 @@ export function validate<T extends EnvSchema>(
 ): ValidationResult<InferEnv<T>> {
   const errors: ValidationError[] = [];
   const data: Record<string, unknown> = {};
+  const expectedEnvKeys = new Set<string>();
 
-  const { prefix, stripPrefix } = options;
+  const { prefix, stripPrefix, strict } = options;
 
   for (const [key, fieldSchema] of Object.entries(schema)) {
     // Determine the actual env var name
     const envKey = prefix ? `${prefix}${key}` : key;
+    expectedEnvKeys.add(envKey);
     const value = source[envKey];
 
     // Validate the variable
@@ -109,6 +112,31 @@ export function validate<T extends EnvSchema>(
       // Store with potentially stripped key
       const outputKey = stripPrefix && prefix ? key : envKey;
       data[outputKey] = result.value;
+    }
+  }
+
+  if (strict) {
+    const strictIgnore = new Set(options.strictIgnore ?? []);
+    for (const [sourceKey, sourceValue] of Object.entries(source)) {
+      if (sourceValue === undefined) {
+        continue;
+      }
+
+      if (strictIgnore.has(sourceKey)) {
+        continue;
+      }
+
+      if (prefix && !sourceKey.startsWith(prefix)) {
+        continue;
+      }
+
+      if (!expectedEnvKeys.has(sourceKey)) {
+        const outputKey =
+          stripPrefix && prefix && sourceKey.startsWith(prefix)
+            ? sourceKey.slice(prefix.length)
+            : sourceKey;
+        errors.push(createUnknownError(outputKey, sourceValue));
+      }
     }
   }
 
@@ -156,9 +184,6 @@ export function handleValidationFailure(
       process.exit(options.exitCode ?? 1);
       // TypeScript doesn't know process.exit never returns
       throw new Error("Unreachable");
-
-    case "return":
-      throw new EnvValidationError(errors, formattedMessage);
 
     case "throw":
     default:

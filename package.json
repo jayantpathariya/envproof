@@ -1,6 +1,6 @@
 {
   "name": "envproof",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "TypeScript-first environment variable validation with schema-driven type safety",
   "type": "module",
   "packageManager": "pnpm@10.28.0",

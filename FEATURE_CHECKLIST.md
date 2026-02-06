@@ -1,6 +1,6 @@
 # EnvProof Feature Documentation Checklist
 
-**Last Updated**: January 19, 2026
+**Last Updated**: February 6, 2026
 
 This document tracks which features are documented in README and CHANGELOG.
 
@@ -36,7 +36,7 @@ This document tracks which features are documented in README and CHANGELOG.
 |--------|--------|---------|
 | `.minLength()` | ✅ | ✅ |
 | `.maxLength()` | ✅ | ✅ |
-| `.length()` | ⚠️ | ❌ |
+| `.length()` | ✅ | ✅ |
 | `.pattern()` | ✅ | ✅ |
 | `.email()` | ✅ | ✅ |
 | `.uuid()` | ✅ | ✅ |
@@ -78,9 +78,9 @@ This document tracks which features are documented in README and CHANGELOG.
 
 | Method | README | Example |
 |--------|--------|---------|
-| `.separator()` | ⚠️ | ❌ |
+| `.separator()` | ✅ | ✅ |
 | `.minLength()` | ✅ | ✅ |
-| `.maxLength()` | ⚠️ | ❌ |
+| `.maxLength()` | ✅ | ✅ |
 
 ## ✅ Duration Methods
 
@@ -115,7 +115,7 @@ This document tracks which features are documented in README and CHANGELOG.
 | `.transform()` | ✅ | ✅ | ✅ |
 | `.custom()` | ✅ | ✅ | ✅ |
 
-## ✅ Configuration Options (v1.1.0)
+## ✅ Configuration Options (v1.4.0)
 
 | Option | README | CHANGELOG | Example |
 |--------|--------|-----------|---------|
@@ -127,11 +127,15 @@ This document tracks which features are documented in README and CHANGELOG.
 | `reporter` | ✅ | ✅ | ✅ |
 | `dotenv` | ✅ | ✅ | ✅ |
 | `dotenvPath` | ✅ | ✅ | ✅ |
+| `dotenvExpand` | ✅ | ✅ | ✅ |
 | `environment` | ✅ | ✅ | ✅ |
 | `requireInProduction` | ✅ | ✅ | ✅ |
 | `optionalInDevelopment` | ✅ | ✅ | ✅ |
+| `strict` | ✅ | ✅ | ✅ |
+| `strictIgnore` | ✅ | ✅ | ✅ |
+| `crossValidate` | ✅ | ✅ | ✅ |
 
-## ✅ Utilities (v1.1.0)
+## ✅ Utilities (v1.4.0)
 
 | Utility | README | CHANGELOG | Example |
 |---------|--------|-----------|---------|
@@ -142,6 +146,7 @@ This document tracks which features are documented in README and CHANGELOG.
 | `loadDotenv()` | ✅ | ✅ | ✅ |
 | `loadDotenvFiles()` | ✅ | ✅ | ✅ |
 | `parseDotenv()` | ✅ | ✅ | ✅ |
+| `expandDotenvVars()` | ✅ | ✅ | ✅ |
 
 ## ✅ CLI Commands
 
@@ -149,6 +154,7 @@ This document tracks which features are documented in README and CHANGELOG.
 |---------|--------|-----------|-----------|
 | `envproof check` | ✅ | ✅ | ✅ |
 | `envproof generate` | ✅ | ✅ | ✅ |
+| `envproof init` | ✅ | ✅ | ✅ |
 
 ## ✅ Error Reporters
 
@@ -156,7 +162,7 @@ This document tracks which features are documented in README and CHANGELOG.
 |----------|--------|-----------|----------------|
 | `pretty` | ✅ | ✅ | ✅ |
 | `json` | ✅ | ✅ | ✅ |
-| `minimal` | ✅ | ✅ | ⚠️ |
+| `minimal` | ✅ | ✅ | ✅ |
 
 ## ✅ Framework Examples
 
@@ -164,47 +170,40 @@ This document tracks which features are documented in README and CHANGELOG.
 |-----------|--------|-----------------|
 | Express | ✅ | ✅ |
 | Next.js | ✅ | ✅ |
-| Docker | ❌ | ✅ |
-| Monorepo | ❌ | ✅ |
+| Docker | ✅ | ✅ |
+| Monorepo | ✅ | ✅ |
 | AWS Lambda | ✅ | ❌ |
 
-## 📝 Recent Additions (Unreleased)
+## 📝 Recent Additions (v1.4.0)
 
 | Feature | README | CHANGELOG | Tests |
 |---------|--------|-----------|-------|
-| Duration string defaults | ✅ | ✅ | ✅ |
-| Performance benchmarks | ❌ | ✅ | ✅ |
-| Bundle size monitoring | ❌ | ✅ | ✅ |
-| Security documentation | ❌ | ✅ | N/A |
-| Migration guide | ❌ | ✅ | N/A |
-| Troubleshooting guide | ❌ | ✅ | N/A |
+| `init` CLI command | ✅ | ✅ | ✅ |
+| Strict mode (`strict`, `strictIgnore`) | ✅ | ✅ | ✅ |
+| Cross-field validation (`crossValidate`) | ✅ | ✅ | ✅ |
+| Dotenv layered paths (`dotenvPath: string[]`) | ✅ | ✅ | ✅ |
+| Dotenv variable expansion (`dotenvExpand`) | ✅ | ✅ | ✅ |
+| `expandDotenvVars()` utility | ✅ | ✅ | ✅ |
+| Built CLI smoke tests in CI | ✅ | ✅ | ✅ |
 
 ## ⚠️ Missing Documentation
 
-### Minor Missing Items:
-1. `.length()` for strings - should be in README
-2. `.separator()` for arrays - should be in README
-3. `.maxLength()` for arrays - should be in README
-4. `minimal` reporter - needs example output
-5. Docker example - should reference in README
-6. Monorepo example - should reference in README
+No major gaps identified in current surface area.
 
 ## 📊 Documentation Coverage
 
 - **Schema Types**: 9/9 (100%)
 - **Core Features**: 16/16 (100%)
-- **Configuration Options**: 11/11 (100%)
-- **Utilities**: 7/7 (100%)
-- **CLI Commands**: 2/2 (100%)
-- **Overall**: ~95% complete
+- **Configuration Options**: 15/15 (100%)
+- **Utilities**: 8/8 (100%)
+- **CLI Commands**: 3/3 (100%)
+- **Overall**: ~99% complete
 
 ## 🎯 Action Items
 
-1. Add missing string/array methods to README
-2. Add links to Docker/Monorepo examples in README
-3. Add example output for minimal reporter
-4. Consider adding "What's New" section to README for recent features
-5. Update README badges if needed (coverage, downloads, etc.)
+1. Keep README examples in sync with future CLI/API additions
+2. Keep CI smoke test commands aligned with supported Node versions
+3. Re-run checklist on each release cut
 
 ---
 

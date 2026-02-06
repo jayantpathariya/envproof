@@ -5,8 +5,11 @@
 
 import { runCheck } from "./check.js";
 import { runGenerate } from "./generate.js";
+import { runInit } from "./init.js";
+import { parseArgs } from "./args.js";
+import { getCliVersion } from "./version.js";
 
-const VERSION = "1.0.0";
+const VERSION = getCliVersion();
 
 const HELP = `
 envproof - TypeScript-first environment variable validation
@@ -17,6 +20,7 @@ USAGE:
 COMMANDS:
   check      Validate environment variables against schema
   generate   Generate .env.example from schema
+  init       Scaffold env.config.ts and .env.example
   help       Show this help message
   version    Show version number
 
@@ -24,81 +28,20 @@ OPTIONS:
   --schema <path>    Path to schema file (default: env.config.ts)
   --output <path>    Output path for .env.example (default: .env.example)
   --force            Overwrite existing files
+  --strict           Fail on unknown variables (for check command)
   --reporter <type>  Error output format: pretty, json, minimal
 
 EXAMPLES:
   envproof check
   envproof check --schema ./config/env.ts
+  envproof check --strict
   envproof generate
   envproof generate --output .env.template --force
+  envproof init
+  envproof init --schema ./config/env.ts --output .env.example
 
 For more information, visit: https://github.com/jayantpathariya/envproof
 `;
-
-interface ParsedArgs {
-  command: string;
-  schema: string | undefined;
-  output: string | undefined;
-  force: boolean;
-  reporter: "pretty" | "json" | "minimal" | undefined;
-}
-
-/**
- * Parse command-line arguments
- */
-function parseArgs(args: string[]): ParsedArgs {
-  const result: ParsedArgs = {
-    command: args[0] ?? "help",
-    schema: undefined,
-    output: undefined,
-    force: false,
-    reporter: undefined,
-  };
-
-  for (let i = 1; i < args.length; i++) {
-    const arg = args[i];
-    const next = args[i + 1];
-
-    switch (arg) {
-      case "--schema":
-      case "-s":
-        result.schema = next;
-        i++;
-        break;
-
-      case "--output":
-      case "-o":
-        result.output = next;
-        i++;
-        break;
-
-      case "--force":
-      case "-f":
-        result.force = true;
-        break;
-
-      case "--reporter":
-      case "-r":
-        if (next === "pretty" || next === "json" || next === "minimal") {
-          result.reporter = next;
-        }
-        i++;
-        break;
-
-      case "--help":
-      case "-h":
-        result.command = "help";
-        break;
-
-      case "--version":
-      case "-v":
-        result.command = "version";
-        break;
-    }
-  }
-
-  return result;
-}
 
 /**
  * Main CLI entry point
@@ -114,12 +57,21 @@ async function main(): Promise<void> {
       exitCode = await runCheck({
         ...(parsed.schema !== undefined && { schema: parsed.schema }),
         ...(parsed.reporter !== undefined && { reporter: parsed.reporter }),
+        strict: parsed.strict,
       });
       break;
 
     case "generate":
     case "gen":
       exitCode = await runGenerate({
+        ...(parsed.schema !== undefined && { schema: parsed.schema }),
+        ...(parsed.output !== undefined && { output: parsed.output }),
+        force: parsed.force,
+      });
+      break;
+
+    case "init":
+      exitCode = runInit({
         ...(parsed.schema !== undefined && { schema: parsed.schema }),
         ...(parsed.output !== undefined && { output: parsed.output }),
         force: parsed.force,

@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22, 24]
+        node-version: [18, 20, 22]
 
     steps:
       - name: Checkout repository
@@ -46,7 +46,7 @@ jobs:
         run: pnpm run test:run
 
       - name: Upload coverage report
-        if: matrix.node-version == 24
+        if: matrix.node-version == 22
         uses: actions/upload-artifact@v6
         with:
           name: coverage-report
@@ -76,6 +76,26 @@ jobs:
 
       - name: Build package
         run: pnpm run build
+
+      - name: Smoke test built CLI
+        run: |
+          node dist/cli/index.js version
+          node dist/cli/index.js help
+
+          TMP_DIR="$(mktemp -d)"
+          cat > "$TMP_DIR/env.config.mjs" <<EOF
+          import { e } from "${{ github.workspace }}/dist/index.js";
+          export const schema = {
+            PORT: e.number().default(3000),
+          };
+          EOF
+
+          node dist/cli/index.js check --schema "$TMP_DIR/env.config.mjs"
+          node dist/cli/index.js generate --schema "$TMP_DIR/env.config.mjs" --output "$TMP_DIR/.env.example" --force
+          test -f "$TMP_DIR/.env.example"
+          node dist/cli/index.js init --schema "$TMP_DIR/env.config.ts" --output "$TMP_DIR/.env.init.example" --force
+          test -f "$TMP_DIR/env.config.ts"
+          test -f "$TMP_DIR/.env.init.example"
 
       - name: Validate package
         run: pnpm exec publint

@@ -7,7 +7,12 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { loadDotenv, loadDotenvFiles, parseDotenv } from "../src/dotenv.js";
+import {
+  loadDotenv,
+  loadDotenvFiles,
+  parseDotenv,
+  expandDotenvVars,
+} from "../src/dotenv.js";
 
 describe("parseDotenv", () => {
   it("parses simple key=value pairs", () => {
@@ -373,5 +378,37 @@ describe("loadDotenvFiles", () => {
     expect(Object.keys(result)).toHaveLength(10);
     expect(result.KEY0).toBe("value0");
     expect(result.KEY9).toBe("value9");
+  });
+});
+
+describe("expandDotenvVars", () => {
+  it("expands variables from the same dotenv object", () => {
+    const expanded = expandDotenvVars({
+      HOST: "localhost",
+      API_URL: "https://${HOST}/api",
+    });
+
+    expect(expanded.API_URL).toBe("https://localhost/api");
+  });
+
+  it("uses context values when variable is not in dotenv object", () => {
+    const expanded = expandDotenvVars(
+      {
+        API_URL: "https://${HOST}/api",
+      },
+      { HOST: "example.com" }
+    );
+
+    expect(expanded.API_URL).toBe("https://example.com/api");
+  });
+
+  it("prevents infinite recursion on circular references", () => {
+    const expanded = expandDotenvVars({
+      A: "${B}",
+      B: "${A}",
+    });
+
+    expect(expanded.A).toBe("");
+    expect(expanded.B).toBe("");
   });
 });

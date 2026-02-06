@@ -3,9 +3,18 @@
  * Main entry point for environment validation
  */
 
-import type { EnvSchema, InferEnv, EnvOptions, AnySchema } from "./types.js";
+import type {
+  EnvSchema,
+  InferEnv,
+  EnvOptions,
+  AnySchema,
+  ValidationResult,
+  CrossFieldValidationResult,
+  CrossFieldValidationIssue,
+} from "./types.js";
 import { validate, handleValidationFailure } from "./validation/engine.js";
-import { loadDotenv } from "./dotenv.js";
+import { createCrossFieldError } from "./validation/errors.js";
+import { loadDotenvFiles, expandDotenvVars } from "./dotenv.js";
 
 /**
  * Create and validate a typed environment object
@@ -26,24 +35,28 @@ import { loadDotenv } from "./dotenv.js";
  */
 export function createEnv<T extends EnvSchema>(
   schema: T,
+  options?: Omit<EnvOptions, "onError"> & { onError?: "throw" | "exit" }
+): InferEnv<T>;
+export function createEnv<T extends EnvSchema>(
+  schema: T,
+  options: Omit<EnvOptions, "onError"> & { onError: "return" }
+): ValidationResult<InferEnv<T>>;
+export function createEnv<T extends EnvSchema>(
+  schema: T,
   options: EnvOptions = {}
-): InferEnv<T> {
-  // Load environment variables from .env file if requested
-  let source = options.source ?? process.env;
-
-  if (options.dotenv) {
-    const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
-    // Merge: process.env takes precedence over .env file
-    // Use Object.assign for better performance with large objects
-    source = Object.assign({}, dotenvVars, source);
-  }
+): InferEnv<T> | ValidationResult<InferEnv<T>> {
+  const source = resolveSource(options);
 
   // Apply environment-specific schema modifications
   const modifiedSchema = applyEnvironmentRules(schema, options);
 
-  const result = validate(modifiedSchema, source, options);
+  const baseResult = validate(modifiedSchema, source, options);
+  const result = applyCrossFieldValidation(baseResult, options.crossValidate);
 
   if (!result.success) {
+    if (options.onError === "return") {
+      return result;
+    }
     handleValidationFailure(result.errors, options);
   }
 
@@ -52,8 +65,13 @@ export function createEnv<T extends EnvSchema>(
     throw new Error("Validation succeeded but no data returned");
   }
 
-  // Freeze the object to prevent modifications
-  return Object.freeze(result.data) as InferEnv<T>;
+  const frozenData = Object.freeze(result.data) as InferEnv<T>;
+
+  if (options.onError === "return") {
+    return { success: true, data: frozenData, errors: [] };
+  }
+
+  return frozenData;
 }
 
 /**
@@ -117,6 +135,92 @@ function applyEnvironmentRules<T extends EnvSchema>(
 }
 
 /**
+ * Resolve the environment source, optionally layering and expanding dotenv files.
+ */
+function resolveSource(options: EnvOptions): Record<string, string | undefined> {
+  const source = options.source ?? process.env;
+
+  if (!options.dotenv) {
+    return source;
+  }
+
+  const dotenvPaths = resolveDotenvPaths(options);
+  let dotenvVars = loadDotenvFiles(...dotenvPaths);
+
+  if (options.dotenvExpand) {
+    dotenvVars = expandDotenvVars(dotenvVars, source);
+  }
+
+  // Merge: source vars take precedence over dotenv file vars
+  return Object.assign({}, dotenvVars, source);
+}
+
+/**
+ * Resolve dotenv file paths for layered loading.
+ */
+function resolveDotenvPaths(options: EnvOptions): string[] {
+  if (Array.isArray(options.dotenvPath)) {
+    return options.dotenvPath;
+  }
+
+  if (typeof options.dotenvPath === "string") {
+    return [options.dotenvPath];
+  }
+
+  if (!options.environment) {
+    return [".env"];
+  }
+
+  return [
+    ".env",
+    `.env.${options.environment}`,
+    ".env.local",
+    `.env.${options.environment}.local`,
+  ];
+}
+
+/**
+ * Apply cross-field validation for constraints involving multiple variables.
+ */
+function applyCrossFieldValidation<T>(
+  result: ValidationResult<T>,
+  validator?: (env: Readonly<Record<string, unknown>>) => CrossFieldValidationResult
+): ValidationResult<T> {
+  if (!result.success || !result.data || !validator) {
+    return result;
+  }
+
+  const validationResult = validator(result.data as Record<string, unknown>);
+  if (validationResult === undefined) {
+    return result;
+  }
+
+  const rawIssues = Array.isArray(validationResult)
+    ? validationResult
+    : [validationResult];
+  const errors = rawIssues.map((issue) => normalizeCrossFieldIssue(issue));
+
+  if (errors.length === 0) {
+    return result;
+  }
+
+  return { success: false, errors };
+}
+
+/**
+ * Normalize cross-field validator issue into a standard validation error.
+ */
+function normalizeCrossFieldIssue(
+  issue: string | CrossFieldValidationIssue
+) {
+  if (typeof issue === "string") {
+    return createCrossFieldError(issue);
+  }
+
+  return createCrossFieldError(issue.message, issue.variable ?? "_schema");
+}
+
+/**
  * Validate environment without throwing
  * Returns a result object with success/data/errors
  *
@@ -134,17 +238,11 @@ export function validateEnv<T extends EnvSchema>(
   schema: T,
   options: Omit<EnvOptions, "onError"> = {}
 ) {
-  // Load environment variables from .env file if requested
-  let source = options.source ?? process.env;
-
-  if (options.dotenv) {
-    const dotenvVars = loadDotenv(options.dotenvPath ?? ".env");
-    // Use Object.assign for better performance with large objects
-    source = Object.assign({}, dotenvVars, source);
-  }
+  const source = resolveSource(options);
 
   // Apply environment-specific schema modifications
   const modifiedSchema = applyEnvironmentRules(schema, options);
 
-  return validate(modifiedSchema, source, options);
+  const baseResult = validate(modifiedSchema, source, options);
+  return applyCrossFieldValidation(baseResult, options.crossValidate);
 }

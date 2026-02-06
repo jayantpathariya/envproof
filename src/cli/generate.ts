@@ -3,54 +3,14 @@
  * Generate .env.example from schema
  */
 
-import * as fs from "node:fs";
 import * as path from "node:path";
-import type { EnvSchema } from "../types.js";
 import { writeExampleFile } from "../generator/index.js";
+import { loadSchema, getSchemaSearchPaths } from "./schema-loader.js";
 
 interface GenerateOptions {
   schema?: string;
   output?: string;
   force?: boolean;
-}
-
-/**
- * Find and load the schema file
- */
-async function loadSchema(
-  schemaPath?: string
-): Promise<{ schema: EnvSchema; path: string } | null> {
-  const searchPaths = schemaPath
-    ? [schemaPath]
-    : [
-        "env.config.ts",
-        "env.config.js",
-        "env.config.mjs",
-        "src/env.config.ts",
-        "src/env.config.js",
-        "config/env.ts",
-        "config/env.js",
-      ];
-
-  for (const searchPath of searchPaths) {
-    const absolutePath = path.resolve(process.cwd(), searchPath);
-    if (fs.existsSync(absolutePath)) {
-      try {
-        // Dynamic import for ES modules - use file:// URL for Windows compatibility
-        const fileUrl = new URL(`file:///${absolutePath.replace(/\\/g, "/")}`);
-        const module = await import(fileUrl.href);
-        const schema = module.default ?? module.schema ?? module.env;
-
-        if (schema && typeof schema === "object") {
-          return { schema, path: absolutePath };
-        }
-      } catch (error) {
-        console.error(`Failed to load schema from ${searchPath}:`, error);
-      }
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -65,9 +25,9 @@ export async function runGenerate(
     console.error("❌ Could not find env schema file.");
     console.error("");
     console.error("Searched for:");
-    console.error("  - env.config.ts");
-    console.error("  - env.config.js");
-    console.error("  - src/env.config.ts");
+    for (const searchPath of getSchemaSearchPaths(options.schema)) {
+      console.error(`  - ${searchPath}`);
+    }
     console.error("");
     console.error("Create a schema file or specify with --schema <path>");
     return 1;

@@ -139,7 +139,12 @@ export { formatPretty, formatJson, formatMinimal } from "./reporters/index.js";
  * console.log(vars.DATABASE_URL);
  * ```
  */
-export { loadDotenv, loadDotenvFiles, parseDotenv } from "./dotenv.js";
+export {
+  loadDotenv,
+  loadDotenvFiles,
+  parseDotenv,
+  expandDotenvVars,
+} from "./dotenv.js";
 
 // Schema composition utilities
 
@@ -189,4 +194,7 @@ export type {
   CoercionResult,
   ReporterType,
   CustomReporter,
+  CrossFieldValidationIssue,
+  CrossFieldValidationResult,
+  CrossFieldValidator,
 } from "./types.js";

@@ -72,7 +72,9 @@ export type ValidationErrorReason =
   | "empty"
   | "invalid_type"
   | "invalid_value"
-  | "parse_error";
+  | "parse_error"
+  | "unknown"
+  | "cross_field";
 
 /** Individual validation error */
 export interface ValidationError {
@@ -86,11 +88,17 @@ export interface ValidationError {
 }
 
 /** Complete validation result */
-export interface ValidationResult<T> {
-  success: boolean;
-  data?: T;
-  errors: ValidationError[];
-}
+export type ValidationResult<T> =
+  | {
+      success: true;
+      data: T;
+      errors: [];
+    }
+  | {
+      success: false;
+      data?: undefined;
+      errors: ValidationError[];
+    };
 
 // ============================================================
 // Configuration Types
@@ -104,6 +112,24 @@ export type ReporterType = "pretty" | "json" | "minimal";
 
 /** Custom reporter function */
 export type CustomReporter = (errors: ValidationError[]) => string;
+
+/** Cross-field validation issue */
+export interface CrossFieldValidationIssue {
+  variable?: string;
+  message: string;
+}
+
+/** Cross-field validator return value */
+export type CrossFieldValidationResult =
+  | void
+  | string
+  | CrossFieldValidationIssue
+  | Array<string | CrossFieldValidationIssue>;
+
+/** Cross-field validator function */
+export type CrossFieldValidator = (
+  env: Readonly<Record<string, unknown>>
+) => CrossFieldValidationResult;
 
 /** Configuration options for createEnv */
 export interface EnvOptions {
@@ -128,8 +154,8 @@ export interface EnvOptions {
   /** Load .env file automatically */
   dotenv?: boolean;
 
-  /** Path to .env file (default: '.env') */
-  dotenvPath?: string;
+  /** Path(s) to .env file(s). Later files override earlier ones */
+  dotenvPath?: string | string[];
 
   /** Current environment (e.g., 'production', 'development') */
   environment?: string;
@@ -139,6 +165,18 @@ export interface EnvOptions {
 
   /** Variables that are optional in development */
   optionalInDevelopment?: string[];
+
+  /** Fail validation when unknown env vars are present */
+  strict?: boolean;
+
+  /** Ignore these vars when strict mode is enabled */
+  strictIgnore?: string[];
+
+  /** Validate constraints spanning multiple variables */
+  crossValidate?: CrossFieldValidator;
+
+  /** Expand ${VAR} references in dotenv-loaded values */
+  dotenvExpand?: boolean;
 }
 
 // ============================================================
@@ -206,12 +244,13 @@ export interface GenerateOptions {
 // ============================================================
 
 /** CLI command names */
-export type CliCommand = "check" | "generate" | "help" | "version";
+export type CliCommand = "check" | "generate" | "init" | "help" | "version";
 
 /** CLI options */
 export interface CliOptions {
   schema?: string;
   output?: string;
   force?: boolean;
+  strict?: boolean;
   reporter?: ReporterType;
 }

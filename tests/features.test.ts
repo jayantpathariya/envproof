@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { e, validateEnv, parseDotenv } from "../src";
+import { e, validateEnv, parseDotenv, createEnv } from "../src";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -620,5 +620,51 @@ QUOTE="say \\"hello\\""
     const result = parseDotenv(content);
     expect(result.TAB).toBe("Hello\tWorld");
     expect(result.QUOTE).toBe('say "hello"');
+  });
+});
+
+describe("Cross-field Validation", () => {
+  it("should support cross-field validator with string issue", () => {
+    const schema = {
+      NODE_ENV: e.enum(["development", "production"] as const),
+      SENTRY_DSN: e.string().optional(),
+    };
+
+    const result = validateEnv(schema, {
+      source: { NODE_ENV: "production" },
+      crossValidate: (env) => {
+        if (env.NODE_ENV === "production" && !env.SENTRY_DSN) {
+          return "SENTRY_DSN is required when NODE_ENV=production";
+        }
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors[0]?.reason).toBe("cross_field");
+  });
+
+  it("should support cross-field validator with structured issue", () => {
+    const schema = {
+      NODE_ENV: e.enum(["development", "production"] as const),
+      SENTRY_DSN: e.string().optional(),
+    };
+
+    const result = createEnv(schema, {
+      source: { NODE_ENV: "production" },
+      onError: "return",
+      crossValidate: (env) => {
+        if (env.NODE_ENV === "production" && !env.SENTRY_DSN) {
+          return {
+            variable: "SENTRY_DSN",
+            message: "Must be set in production",
+          };
+        }
+      },
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors[0]?.variable).toBe("SENTRY_DSN");
+    }
   });
 });

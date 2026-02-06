@@ -68,6 +68,29 @@ describe("formatPretty", () => {
     const output = formatPretty(sampleErrors);
     expect(output).toContain("abc");
   });
+
+  it("groups unknown and cross-field errors", () => {
+    const output = formatPretty([
+      {
+        variable: "EXTRA_VAR",
+        reason: "unknown",
+        message: "Variable is set but not defined in schema",
+        expected: "variable defined in schema",
+        received: "1",
+        isSecret: false,
+      },
+      {
+        variable: "_schema",
+        reason: "cross_field",
+        message: "SENTRY_DSN is required in production",
+        expected: "cross-field constraint",
+        isSecret: false,
+      },
+    ]);
+
+    expect(output).toContain("UNKNOWN VARIABLES");
+    expect(output).toContain("SCHEMA RULES");
+  });
 });
 
 describe("formatJson", () => {

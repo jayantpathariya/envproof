@@ -9,6 +9,8 @@ export {
   createTypeError,
   createValueError,
   createParseError,
+  createUnknownError,
+  createCrossFieldError,
   EnvValidationError,
   groupErrorsByReason,
 } from "./errors.js";

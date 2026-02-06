@@ -17,6 +17,9 @@ EnvProof validates environment variables at application startup and fails fast w
 - **🎯 Explicit coercion** - Clear rules for string → number/boolean/etc
 - **🔐 Secret masking** - Automatic redaction in error output
 - **📄 .env.example generation** - Auto-generate documentation
+- **🧪 Strict mode** - Fail on unknown environment variables
+- **🔗 Cross-field validation** - Validate constraints across multiple vars
+- **📚 Layered dotenv support** - `.env` + environment-specific overrides
 - **🚀 Zero dependencies** - Lightweight and fast
 - **🌐 Framework-agnostic** - Works everywhere Node.js runs
 
@@ -220,15 +223,45 @@ const env = createEnv(schema, {
   // Output format
   reporter: "pretty", // 'pretty' | 'json' | 'minimal'
 
-  // Dotenv Loading (New in v1.1.0)
-  dotenv: true, // Load .env file automatically
-  dotenvPath: ".env.local", // Custom path
+  // Strict mode
+  strict: false, // Fail on unknown vars
+  strictIgnore: ["HOME", "PATH"], // Optional allow-list when strict=true
 
-  // Multi-Environment (New in v1.1.0)
+  // Dotenv Loading
+  dotenv: true, // Load .env files automatically
+  dotenvPath: [".env", ".env.local"], // Custom layered paths
+  dotenvExpand: true, // Expand ${VAR} references
+
+  // Multi-Environment
   environment: process.env.NODE_ENV, // Current environment
   requireInProduction: ["API_KEY"], // Make optional vars required in prod
   optionalInDevelopment: ["SENTRY_DSN"], // Make required vars optional in dev
+
+  // Cross-field validation
+  crossValidate: (env) => {
+    if (env.NODE_ENV === "production" && !env.API_KEY) {
+      return {
+        variable: "API_KEY",
+        message: "API_KEY is required in production",
+      };
+    }
+  },
 });
+```
+
+### `onError: "return"` Mode
+
+Use `onError: "return"` when you want `createEnv` to return a `ValidationResult`
+instead of throwing:
+
+```typescript
+const result = createEnv(schema, { onError: "return" });
+
+if (!result.success) {
+  console.error(result.errors);
+} else {
+  console.log(result.data.PORT);
+}
 ```
 
 ### Transforms & Custom Validators
@@ -404,11 +437,16 @@ API_KEY=your_secret_here
 npx envproof check
 npx envproof check --schema ./config/env.ts
 npx envproof check --reporter json
+npx envproof check --strict
 
 # Generate .env.example
 npx envproof generate
 npx envproof generate --output .env.example
 npx envproof generate --force
+
+# Scaffold starter files
+npx envproof init
+npx envproof init --schema ./config/env.ts --output .env.example --force
 ```
 
 ## Best Practices
@@ -553,14 +591,25 @@ type Env = InferEnv<typeof schema>;
 EnvProof exports standalone dotenv utilities for advanced use cases:
 
 ```typescript
-import { loadDotenv, loadDotenvFiles, parseDotenv } from "envproof";
+import {
+  loadDotenv,
+  loadDotenvFiles,
+  expandDotenvVars,
+  parseDotenv,
+} from "envproof";
 
 // Load .env file (similar to dotenv)
 loadDotenv(); // Loads .env by default
 loadDotenv(".env.local"); // Custom path
 
 // Load multiple .env files with priority
-loadDotenvFiles([".env.local", ".env"]); // .env.local takes precedence
+loadDotenvFiles(".env", ".env.local"); // .env.local takes precedence
+
+// Expand variable references
+expandDotenvVars({
+  HOST: "localhost",
+  API_URL: "https://${HOST}/api",
+});
 
 // Parse .env file content
 const envContent = `
@@ -581,8 +630,8 @@ Main function to validate and create typed env object.
 
 - **schema**: Record of variable names to schema definitions
 - **options**: Configuration options (optional)
-- **returns**: Frozen object with validated values
-- **throws**: `EnvValidationError` if validation fails
+- **returns**: Frozen env object by default, or `ValidationResult` with `onError: "return"`
+- **throws**: `EnvValidationError` if validation fails (unless `onError: "exit"` or `"return"`)
 
 ### `validateEnv(schema, options?)`
 
@@ -619,8 +668,9 @@ Write .env.example file to disk.
 
 ### Dotenv Utilities
 
-- `loadDotenv(path?)` - Load .env file into process.env
-- `loadDotenvFiles(paths)` - Load multiple .env files with priority
+- `loadDotenv(path?)` - Parse one .env file and return key-value pairs
+- `loadDotenvFiles(...paths)` - Parse and merge multiple .env files
+- `expandDotenvVars(vars, context?)` - Expand `${VAR}` references in dotenv values
 - `parseDotenv(content)` - Parse .env file content to object
 
 ### Schema Composition Utilities
